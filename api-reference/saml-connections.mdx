@@ -1,0 +1,554 @@
+---
+title: "SAML Connections"
+description: "Create, retrieve, update, delete, and list SAML connections for enterprise SSO."
+---
+
+## Overview
+
+The `samlconnection` package provides operations for managing SAML 2.0 connections. SAML connections enable enterprise single sign-on (SSO), allowing users to authenticate through their organization's identity provider (IdP).
+
+**Import path:** `github.com/clerk/clerk-sdk-go/v2/samlconnection`
+
+<Tip>
+  SAML connections are the foundation of Clerk's enterprise SSO feature. Each connection maps a corporate domain to an identity provider, so users with matching email domains are routed through their organization's IdP at sign-in.
+</Tip>
+
+---
+
+## Operations
+
+### Create
+
+Creates a new SAML connection.
+
+```
+func Create(ctx context.Context, params *CreateParams) (*clerk.SAMLConnection, error)
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.SAMLConnection, error)
+```
+
+#### CreateParams
+
+<ParamField path="Name" type="*string">
+  A human-readable name for the SAML connection (e.g. `"Acme Corp SSO"`).
+</ParamField>
+
+<ParamField path="Domain" type="*string">
+  The email domain that should be routed through this connection (e.g. `"acme.com"`).
+</ParamField>
+
+<ParamField path="Provider" type="*string">
+  The SAML provider identifier (e.g. `"saml_okta"`, `"saml_google"`, `"saml_microsoft"`).
+</ParamField>
+
+<ParamField path="OrganizationID" type="*string">
+  The ID of the Clerk organization to associate with this connection, if any.
+</ParamField>
+
+<ParamField path="IdpEntityID" type="*string">
+  The entity ID from the identity provider's metadata.
+</ParamField>
+
+<ParamField path="IdpSsoURL" type="*string">
+  The SSO URL of the identity provider where Clerk will send SAML authentication requests.
+</ParamField>
+
+<ParamField path="IdpCertificate" type="*string">
+  The X.509 certificate from the identity provider, used to verify SAML responses.
+</ParamField>
+
+<ParamField path="IdpMetadataURL" type="*string">
+  A URL to the identity provider's SAML metadata XML. Clerk will fetch and parse it automatically.
+</ParamField>
+
+<ParamField path="IdpMetadata" type="*string">
+  The raw SAML metadata XML from the identity provider, as an alternative to `IdpMetadataURL`.
+</ParamField>
+
+<ParamField path="AttributeMapping" type="*AttributeMappingParams">
+  Mapping from SAML assertion attributes to Clerk user fields. See [AttributeMappingParams](#attributemappingparams).
+</ParamField>
+
+<ParamField path="ForceAuthn" type="*bool">
+  When `true`, Clerk will request fresh authentication from the IdP even if the user has an active IdP session.
+</ParamField>
+
+#### AttributeMappingParams
+
+<ParamField path="UserID" type="string" required>
+  The SAML attribute name that maps to the user's ID.
+</ParamField>
+
+<ParamField path="EmailAddress" type="string" required>
+  The SAML attribute name that maps to the user's email address.
+</ParamField>
+
+<ParamField path="FirstName" type="string" required>
+  The SAML attribute name that maps to the user's first name.
+</ParamField>
+
+<ParamField path="LastName" type="string" required>
+  The SAML attribute name that maps to the user's last name.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/samlconnection"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    conn, err := samlconnection.Create(context.Background(), &samlconnection.CreateParams{
+        Name:           clerk.String("Acme Corp SSO"),
+        Domain:         clerk.String("acme.com"),
+        Provider:       clerk.String("saml_okta"),
+        IdpMetadataURL: clerk.String("https://acme.okta.com/app/exk.../sso/saml/metadata"),
+        AttributeMapping: &samlconnection.AttributeMappingParams{
+            UserID:       "user.id",
+            EmailAddress: "user.email",
+            FirstName:    "user.firstName",
+            LastName:     "user.lastName",
+        },
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/samlconnection"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := samlconnection.NewClient(config)
+
+    conn, err := client.Create(context.Background(), &samlconnection.CreateParams{
+        Name:           clerk.String("Acme Corp SSO"),
+        Domain:         clerk.String("acme.com"),
+        Provider:       clerk.String("saml_okta"),
+        IdpMetadataURL: clerk.String("https://acme.okta.com/app/exk.../sso/saml/metadata"),
+        AttributeMapping: &samlconnection.AttributeMappingParams{
+            UserID:       "user.id",
+            EmailAddress: "user.email",
+            FirstName:    "user.firstName",
+            LastName:     "user.lastName",
+        },
+    })
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Get
+
+Returns details about a single SAML connection by ID.
+
+```
+func Get(ctx context.Context, id string) (*clerk.SAMLConnection, error)
+func (c *Client) Get(ctx context.Context, id string) (*clerk.SAMLConnection, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/samlconnection"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    conn, err := samlconnection.Get(context.Background(), "samlc_2abc123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/samlconnection"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := samlconnection.NewClient(config)
+
+    conn, err := client.Get(context.Background(), "samlc_2abc123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Update
+
+Updates an existing SAML connection specified by ID.
+
+```
+func Update(ctx context.Context, id string, params *UpdateParams) (*clerk.SAMLConnection, error)
+func (c *Client) Update(ctx context.Context, id string, params *UpdateParams) (*clerk.SAMLConnection, error)
+```
+
+#### UpdateParams
+
+<ParamField path="Name" type="*string">
+  A new human-readable name for the connection.
+</ParamField>
+
+<ParamField path="Domain" type="*string">
+  A new email domain to associate with this connection.
+</ParamField>
+
+<ParamField path="IdpEntityID" type="*string">
+  Update the IdP entity ID.
+</ParamField>
+
+<ParamField path="OrganizationID" type="*string">
+  The organization to associate with this connection. Pass an empty string (`""`) to unset the organization. If `nil`, no change is made.
+</ParamField>
+
+<ParamField path="IdpSsoURL" type="*string">
+  Update the IdP SSO URL.
+</ParamField>
+
+<ParamField path="IdpCertificate" type="*string">
+  Update the IdP X.509 certificate.
+</ParamField>
+
+<ParamField path="IdpMetadataURL" type="*string">
+  Update the URL to the IdP's SAML metadata XML.
+</ParamField>
+
+<ParamField path="IdpMetadata" type="*string">
+  Update the raw SAML metadata XML.
+</ParamField>
+
+<ParamField path="AttributeMapping" type="*AttributeMappingParams">
+  Update the attribute mapping configuration.
+</ParamField>
+
+<ParamField path="Active" type="*bool">
+  Activate or deactivate the connection.
+</ParamField>
+
+<ParamField path="SyncUserAttributes" type="*bool">
+  When `true`, user attributes are synced from the IdP on every sign-in.
+</ParamField>
+
+<ParamField path="AllowSubdomains" type="*bool">
+  When `true`, users with email addresses on subdomains of the connection's domain are also matched.
+</ParamField>
+
+<ParamField path="AllowIdpInitiated" type="*bool">
+  When `true`, IdP-initiated SAML flows are permitted.
+</ParamField>
+
+<ParamField path="DisableAdditionalIdentifications" type="*bool">
+  When `true`, users who sign in via this connection cannot add other identification methods to their account.
+</ParamField>
+
+<ParamField path="ForceAuthn" type="*bool">
+  When `true`, Clerk requests fresh authentication from the IdP on every sign-in.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/samlconnection"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    active := true
+    syncAttrs := true
+
+    conn, err := samlconnection.Update(context.Background(), "samlc_2abc123", &samlconnection.UpdateParams{
+        Active:             &active,
+        SyncUserAttributes: &syncAttrs,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/samlconnection"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := samlconnection.NewClient(config)
+
+    active := true
+    syncAttrs := true
+
+    conn, err := client.Update(context.Background(), "samlc_2abc123", &samlconnection.UpdateParams{
+        Active:             &active,
+        SyncUserAttributes: &syncAttrs,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Delete
+
+Deletes a SAML connection by ID.
+
+```
+func Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+func (c *Client) Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/samlconnection"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    deleted, err := samlconnection.Delete(context.Background(), "samlc_2abc123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/samlconnection"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := samlconnection.NewClient(config)
+
+    deleted, err := client.Delete(context.Background(), "samlc_2abc123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### List
+
+Returns a paginated list of SAML connections.
+
+```
+func List(ctx context.Context, params *ListParams) (*clerk.SAMLConnectionList, error)
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.SAMLConnectionList, error)
+```
+
+#### ListParams
+
+<ParamField path="Query" type="*string">
+  Filter connections by name using a search query string.
+</ParamField>
+
+<ParamField path="OrderBy" type="*string">
+  Field to order results by. Prefix with `-` for descending order (e.g. `"-created_at"`).
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/samlconnection"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    list, err := samlconnection.List(context.Background(), &samlconnection.ListParams{
+        Query:   clerk.String("acme"),
+        OrderBy: clerk.String("-created_at"),
+    })
+    if err != nil {
+        // handle error
+    }
+    for _, conn := range list.SAMLConnections {
+        _ = conn.Name
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/samlconnection"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := samlconnection.NewClient(config)
+
+    list, err := client.List(context.Background(), &samlconnection.ListParams{
+        Query:   clerk.String("acme"),
+        OrderBy: clerk.String("-created_at"),
+    })
+    if err != nil {
+        // handle error
+    }
+    for _, conn := range list.SAMLConnections {
+        _ = conn.Name
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Types
+
+### SAMLConnection
+
+<ResponseField name="id" type="string">
+  The unique identifier for this SAML connection.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  The object type. Always `"saml_connection"`.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The human-readable name of the connection.
+</ResponseField>
+
+<ResponseField name="domain" type="string">
+  The email domain associated with this connection.
+</ResponseField>
+
+<ResponseField name="idp_entity_id" type="*string">
+  The entity ID from the identity provider's metadata.
+</ResponseField>
+
+<ResponseField name="organization_id" type="*string">
+  The ID of the Clerk organization associated with this connection, if any.
+</ResponseField>
+
+<ResponseField name="idp_sso_url" type="*string">
+  The SSO URL of the identity provider.
+</ResponseField>
+
+<ResponseField name="idp_certificate" type="*string">
+  The X.509 certificate from the identity provider.
+</ResponseField>
+
+<ResponseField name="idp_metadata_url" type="*string">
+  The URL to the identity provider's SAML metadata XML.
+</ResponseField>
+
+<ResponseField name="idp_metadata" type="*string">
+  The raw SAML metadata XML from the identity provider.
+</ResponseField>
+
+<ResponseField name="acs_url" type="string">
+  The Assertion Consumer Service URL that the IdP should send SAML responses to. Provided by Clerk.
+</ResponseField>
+
+<ResponseField name="sp_entity_id" type="string">
+  The service provider entity ID. Provided by Clerk.
+</ResponseField>
+
+<ResponseField name="sp_metadata_url" type="string">
+  The URL where the service provider's SAML metadata XML can be fetched. Provided by Clerk.
+</ResponseField>
+
+<ResponseField name="attribute_mapping" type="SAMLConnectionAttributeMapping">
+  The mapping from SAML assertion attributes to Clerk user fields.
+</ResponseField>
+
+<ResponseField name="active" type="bool">
+  Whether the connection is currently active.
+</ResponseField>
+
+<ResponseField name="provider" type="string">
+  The SAML provider identifier (e.g. `"saml_okta"`).
+</ResponseField>
+
+<ResponseField name="user_count" type="int64">
+  The number of users currently using this SAML connection.
+</ResponseField>
+
+<ResponseField name="sync_user_attributes" type="bool">
+  Whether user attributes are synced from the IdP on every sign-in.
+</ResponseField>
+
+<ResponseField name="allow_subdomains" type="bool">
+  Whether users with subdomain email addresses are matched to this connection.
+</ResponseField>
+
+<ResponseField name="allow_idp_initiated" type="bool">
+  Whether IdP-initiated SAML flows are permitted.
+</ResponseField>
+
+<ResponseField name="disable_additional_identifications" type="bool">
+  Whether users who sign in via this connection are prevented from adding other identification methods.
+</ResponseField>
+
+<ResponseField name="force_authn" type="bool">
+  Whether Clerk requests fresh authentication from the IdP on every sign-in.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) of when the connection was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) of the last update.
+</ResponseField>
+
+### SAMLConnectionAttributeMapping
+
+<ResponseField name="user_id" type="string">
+  The SAML attribute name mapped to the user's ID.
+</ResponseField>
+
+<ResponseField name="email_address" type="string">
+  The SAML attribute name mapped to the user's email address.
+</ResponseField>
+
+<ResponseField name="first_name" type="string">
+  The SAML attribute name mapped to the user's first name.
+</ResponseField>
+
+<ResponseField name="last_name" type="string">
+  The SAML attribute name mapped to the user's last name.
+</ResponseField>
+
+### SAMLConnectionList
+
+<ResponseField name="data" type="[]*SAMLConnection">
+  The list of SAML connection objects.
+</ResponseField>
+
+<ResponseField name="total_count" type="int64">
+  The total number of SAML connections across all pages.
+</ResponseField>

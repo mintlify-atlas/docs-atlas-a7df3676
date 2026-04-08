@@ -1,0 +1,334 @@
+---
+title: "Email Addresses"
+description: "Create, retrieve, update, and delete email addresses associated with users."
+---
+
+## Overview
+
+The `emailaddress` package provides operations for managing email addresses attached to Clerk users. Each user can have multiple email addresses; one can be designated as primary.
+
+**Import path:** `github.com/clerk/clerk-sdk-go/v2/emailaddress`
+
+---
+
+## Operations
+
+### Create
+
+Creates a new email address for a user.
+
+```
+func Create(ctx context.Context, params *CreateParams) (*clerk.EmailAddress, error)
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.EmailAddress, error)
+```
+
+#### CreateParams
+
+<ParamField path="UserID" type="*string">
+  The ID of the user to associate this email address with.
+</ParamField>
+
+<ParamField path="EmailAddress" type="*string">
+  The email address string (e.g. `"user@example.com"`).
+</ParamField>
+
+<ParamField path="Verified" type="*bool">
+  Whether the email address should be marked as verified. Defaults to `false`.
+</ParamField>
+
+<ParamField path="Primary" type="*bool">
+  Whether this email address should be set as the user's primary email address.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/emailaddress"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    verified := true
+    primary := false
+
+    email, err := emailaddress.Create(context.Background(), &emailaddress.CreateParams{
+        UserID:       clerk.String("user_2abc123"),
+        EmailAddress: clerk.String("user@example.com"),
+        Verified:     &verified,
+        Primary:      &primary,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/emailaddress"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := emailaddress.NewClient(config)
+
+    verified := true
+    primary := false
+
+    email, err := client.Create(context.Background(), &emailaddress.CreateParams{
+        UserID:       clerk.String("user_2abc123"),
+        EmailAddress: clerk.String("user@example.com"),
+        Verified:     &verified,
+        Primary:      &primary,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Get
+
+Retrieves a single email address by ID.
+
+```
+func Get(ctx context.Context, id string) (*clerk.EmailAddress, error)
+func (c *Client) Get(ctx context.Context, id string) (*clerk.EmailAddress, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/emailaddress"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    email, err := emailaddress.Get(context.Background(), "idn_2abc123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/emailaddress"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := emailaddress.NewClient(config)
+
+    email, err := client.Get(context.Background(), "idn_2abc123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Update
+
+Updates an existing email address specified by ID.
+
+```
+func Update(ctx context.Context, id string, params *UpdateParams) (*clerk.EmailAddress, error)
+func (c *Client) Update(ctx context.Context, id string, params *UpdateParams) (*clerk.EmailAddress, error)
+```
+
+#### UpdateParams
+
+<ParamField path="Verified" type="*bool">
+  Update the verified status of the email address.
+</ParamField>
+
+<ParamField path="Primary" type="*bool">
+  Set whether this email address should be the user's primary email address.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/emailaddress"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    primary := true
+
+    email, err := emailaddress.Update(context.Background(), "idn_2abc123", &emailaddress.UpdateParams{
+        Primary: &primary,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/emailaddress"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := emailaddress.NewClient(config)
+
+    primary := true
+
+    email, err := client.Update(context.Background(), "idn_2abc123", &emailaddress.UpdateParams{
+        Primary: &primary,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Delete
+
+Deletes an email address by ID.
+
+```
+func Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+func (c *Client) Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/emailaddress"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    deleted, err := emailaddress.Delete(context.Background(), "idn_2abc123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/emailaddress"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := emailaddress.NewClient(config)
+
+    deleted, err := client.Delete(context.Background(), "idn_2abc123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Types
+
+### EmailAddress
+
+<ResponseField name="id" type="string">
+  The unique identifier for this email address resource.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  The object type. Always `"email_address"`.
+</ResponseField>
+
+<ResponseField name="email_address" type="string">
+  The email address string.
+</ResponseField>
+
+<ResponseField name="reserved" type="bool">
+  Whether the email address is reserved and cannot be used for sign-up.
+</ResponseField>
+
+<ResponseField name="verification" type="Verification">
+  The current verification state of the email address. `null` if no verification has been initiated.
+</ResponseField>
+
+<ResponseField name="linked_to" type="[]LinkedIdentification">
+  A list of identifications (e.g. OAuth accounts) linked to this email address.
+</ResponseField>
+
+<ResponseField name="matches_sso_connection" type="bool">
+  Whether the email address domain matches an active SSO connection.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) of when the email address was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) of the last update.
+</ResponseField>
+
+### Verification
+
+<ResponseField name="object" type="string">
+  Always `"verification"`.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The verification status. One of `"unverified"`, `"verified"`, `"failed"`, or `"expired"`.
+</ResponseField>
+
+<ResponseField name="strategy" type="string">
+  The verification strategy used (e.g. `"email_link"`, `"email_code"`).
+</ResponseField>
+
+<ResponseField name="channel" type="*string">
+  The channel through which verification was sent, if applicable.
+</ResponseField>
+
+<ResponseField name="attempts" type="*int64">
+  The number of verification attempts made.
+</ResponseField>
+
+<ResponseField name="expire_at" type="*int64">
+  Unix timestamp (milliseconds) when the verification expires.
+</ResponseField>
+
+<ResponseField name="nonce" type="*string">
+  The nonce used during verification, if applicable.
+</ResponseField>
+
+<ResponseField name="message" type="*string">
+  An optional message associated with the verification result.
+</ResponseField>
+
+<ResponseField name="external_verification_redirect_url" type="*string">
+  The redirect URL used for external verification flows.
+</ResponseField>
+
+<ResponseField name="error" type="object">
+  Error details if the verification failed.
+</ResponseField>
+
+### LinkedIdentification
+
+<ResponseField name="id" type="string">
+  The ID of the linked identification (e.g. an OAuth account ID).
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  The type of linked identification (e.g. `"oauth_google"`).
+</ResponseField>

@@ -1,80 +1,175 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Make your first Clerk Backend API call from Go in under five minutes."
 ---
 
-## Get started in three steps
+<Steps>
 
-Get your documentation site running locally and make your first customization.
+<Step title="Install the SDK">
 
-### Step 1: Set up your local environment
+Add the SDK to your Go module:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+```bash
+go get -u github.com/clerk/clerk-sdk-go/v2
+```
 
-### Step 2: Deploy your changes
+Or, if you use Go modules and prefer to let the toolchain resolve the dependency on the next build, add the import directly to your Go file — the module will be fetched automatically when you run `go mod tidy`.
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+```go
+import "github.com/clerk/clerk-sdk-go/v2"
+```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+</Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+<Step title="Set your secret key">
 
-### Step 3: Go live
+Find your secret key in the [Clerk Dashboard](https://dashboard.clerk.com) under **API Keys**. Call `clerk.SetKey` once at application startup.
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+```go
+package main
 
-## Next steps
+import "github.com/clerk/clerk-sdk-go/v2"
 
-Now that you have your docs running, explore these key features:
+func main() {
+    clerk.SetKey("sk_live_XXX")
+}
+```
+
+<Warning>
+Never hard-code your secret key in source code. Read it from an environment variable (for example, `os.Getenv("CLERK_SECRET_KEY")`) before passing it to `clerk.SetKey`.
+</Warning>
+
+</Step>
+
+<Step title="Make your first API call">
+
+Import the resource package for what you need and call the operation. Every operation takes a `context.Context` as its first argument.
+
+<CodeGroup>
+
+```go list users
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/clerk/clerk-sdk-go/v2"
+    "github.com/clerk/clerk-sdk-go/v2/user"
+)
+
+func main() {
+    clerk.SetKey("sk_live_XXX")
+
+    users, err := user.List(context.Background(), &user.ListParams{})
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Total users: %d\n", users.TotalCount)
+    for _, u := range users.Users {
+        fmt.Println(u.ID)
+    }
+}
+```
+
+```go create organization
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/clerk/clerk-sdk-go/v2"
+    "github.com/clerk/clerk-sdk-go/v2/organization"
+)
+
+func main() {
+    clerk.SetKey("sk_live_XXX")
+
+    org, err := organization.Create(context.Background(), &organization.CreateParams{
+        Name: clerk.String("Clerk Inc"),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Created organization: %s\n", org.ID)
+}
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Add HTTP middleware (optional)">
+
+Protect your HTTP handlers with Clerk's built-in middleware. `WithHeaderAuthorization` verifies the `Authorization: Bearer <token>` header and writes the session claims into the request context. `RequireHeaderAuthorization` does the same but returns HTTP 403 if no valid claims are found.
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+
+    "github.com/clerk/clerk-sdk-go/v2"
+    clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
+)
+
+func main() {
+    clerk.SetKey("sk_live_XXX")
+
+    mux := http.NewServeMux()
+    mux.HandleFunc("/", publicRoute)
+
+    protectedHandler := http.HandlerFunc(protectedRoute)
+    mux.Handle(
+        "/protected",
+        clerkhttp.WithHeaderAuthorization()(protectedHandler),
+    )
+
+    http.ListenAndServe(":3000", mux)
+}
+
+func publicRoute(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte(`{"access": "public"}`))
+}
+
+func protectedRoute(w http.ResponseWriter, r *http.Request) {
+    claims, ok := clerk.SessionClaimsFromContext(r.Context())
+    if !ok {
+        w.WriteHeader(http.StatusUnauthorized)
+        w.Write([]byte(`{"access": "unauthorized"}`))
+        return
+    }
+    fmt.Fprintf(w, `{"user_id": "%s"}`, claims.Subject)
+}
+```
+
+<Tip>
+Use `clerkhttp.RequireHeaderAuthorization()` instead of `WithHeaderAuthorization` if you want the middleware to automatically respond with HTTP 403 when no valid session token is present, rather than passing the request through unauthenticated.
+</Tip>
+
+</Step>
+
+</Steps>
+
+## What's next
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="HTTP middleware guide" icon="shield-halved" href="/guides/http-middleware">
+    Learn all middleware options, custom JWT extractors, and authorized parties.
+  </Card>
+  <Card title="API reference" icon="code" href="/api-reference/overview">
+    Browse every package, type, and operation in the SDK.
+  </Card>
+  <Card title="Error handling" icon="triangle-exclamation" href="/guides/error-handling">
+    Handle structured API errors and use trace IDs for debugging.
+  </Card>
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Mock the backend for fast, isolated unit tests.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

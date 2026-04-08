@@ -1,0 +1,221 @@
+---
+title: "Actor tokens"
+description: "Create short-lived tokens that let one user act on behalf of another."
+---
+
+Actor tokens enable **user impersonation**: a privileged user (the "actor") can sign in as another user (the "subject") without knowing that user's credentials. This is useful for customer support workflows where a support agent needs to reproduce a user's exact in-app state.
+
+When an actor token is exchanged for a session, the resulting JWT contains an `act` claim identifying the actor, so your backend can always distinguish impersonated sessions from normal ones.
+
+<Warning>
+  Actor tokens grant full access to the subject's account. Issue them only to
+  trusted actors and revoke them immediately when they are no longer needed.
+</Warning>
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/actortoken"
+```
+
+---
+
+## Operations
+
+### `Create`
+
+Creates a new actor token. The token can be exchanged by the actor's client for
+a session scoped to the subject user.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.ActorToken, error)
+```
+
+#### Parameters
+
+<ParamField path="user_id" type="*string" required>
+  The ID of the subject user — the account the actor will impersonate.
+</ParamField>
+
+<ParamField path="actor" type="json.RawMessage" required>
+  A JSON object identifying the actor. Must contain a `sub` field set to the
+  actor's user ID. Example: `{"sub": "user_2abc123"}`.
+</ParamField>
+
+<ParamField path="expires_in_seconds" type="*int64">
+  How many seconds until the token expires. Defaults to the instance's
+  configured value if omitted.
+</ParamField>
+
+<ParamField path="session_max_duration_in_seconds" type="*int64">
+  Maximum lifetime of the session created when this token is exchanged.
+</ParamField>
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client (global backend)">
+    ```go
+    clerk.SetKey("sk_live_...")
+
+    actor := json.RawMessage(`{"sub": "user_actor_abc123"}`)
+
+    token, err := actortoken.Create(context.Background(), &actortoken.CreateParams{
+        UserID:           clerk.String("user_subject_xyz789"),
+        Actor:            actor,
+        ExpiresInSeconds: clerk.Int64(3600),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("actor token:", token.Token)
+    fmt.Println("status:", token.Status)
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+
+    client := actortoken.NewClient(config)
+
+    actor := json.RawMessage(`{"sub": "user_actor_abc123"}`)
+
+    token, err := client.Create(context.Background(), &actortoken.CreateParams{
+        UserID:           clerk.String("user_subject_xyz789"),
+        Actor:            actor,
+        ExpiresInSeconds: clerk.Int64(3600),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("actor token:", token.Token)
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### `Revoke`
+
+Revokes a **pending** actor token so it can no longer be exchanged for a
+session. Tokens that have already been exchanged cannot be revoked this way —
+revoke the session instead.
+
+```go
+func Revoke(ctx context.Context, id string) (*clerk.ActorToken, error)
+```
+
+#### Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the actor token to revoke.
+</ParamField>
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client (global backend)">
+    ```go
+    clerk.SetKey("sk_live_...")
+
+    token, err := actortoken.Revoke(context.Background(), "actor_token_id_here")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("status:", token.Status) // "revoked"
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+
+    client := actortoken.NewClient(config)
+
+    token, err := client.Revoke(context.Background(), "actor_token_id_here")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("status:", token.Status)
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Types
+
+### `clerk.ActorToken`
+
+Returned by both `Create` and `Revoke`.
+
+<ResponseField name="object" type="string">
+  Always `"actor_token"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Unique identifier for the actor token.
+</ResponseField>
+
+<ResponseField name="user_id" type="string">
+  The ID of the subject user being impersonated.
+</ResponseField>
+
+<ResponseField name="actor" type="json.RawMessage">
+  JSON object identifying the actor. Contains at least `{"sub": "<actor_user_id>"}`.
+</ResponseField>
+
+<ResponseField name="token" type="string">
+  The short-lived token string to be exchanged for a session. Only present in
+  the `Create` response; empty after the token is exchanged or revoked.
+</ResponseField>
+
+<ResponseField name="url" type="*string">
+  An optional URL that can be used to trigger the sign-in flow directly.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current state of the token: `"pending"`, `"accepted"`, or `"revoked"`.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) when the token was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) of the last status change.
+</ResponseField>
+
+---
+
+## Detecting impersonation in sessions
+
+When a session is created by exchanging an actor token, the resulting JWT
+contains an `act` claim. You can read it from `clerk.Claims.Actor` after
+verifying the token:
+
+```go
+claims, err := jwt.Verify(ctx, &jwt.VerifyParams{Token: sessionToken})
+if err != nil {
+    log.Fatal(err)
+}
+
+if len(claims.Actor) > 0 {
+    // This is an impersonated session
+    var actor struct {
+        Sub string `json:"sub"`
+    }
+    _ = json.Unmarshal(claims.Actor, &actor)
+    fmt.Printf("acting as %s on behalf of actor %s\n", claims.Subject, actor.Sub)
+}
+```
+
+<Tip>
+  Always log or audit impersonated sessions. The `act` claim is cryptographically
+  verified alongside the rest of the JWT, so you can trust it.
+</Tip>

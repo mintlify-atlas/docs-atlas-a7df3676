@@ -1,122 +1,113 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Clerk Go SDK",
+  "theme": "luma",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#7c7c7c",
+    "light": "#0b0b0b",
+    "dark": "#c7c7c7"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "https://media.brand.dev/2c6e8b1a-05f3-41a1-bd1b-0fac975c5ba1.png",
+  "logo": {
+    "light": "https://media.brand.dev/c3b888ac-7936-4e2b-bef0-0fd07efea8ef.svg",
+    "dark": "https://media.brand.dev/c3b888ac-7936-4e2b-bef0-0fd07efea8ef.svg"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/clerk/clerk-sdk-go"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/clerk/clerk-sdk-go"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
+              "introduction",
               "quickstart",
-              "development"
+              "installation"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Guides",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "guides/configuration",
+              "guides/http-middleware",
+              "guides/jwt-verification",
+              "guides/error-handling",
+              "guides/testing",
+              "guides/migration-v1-to-v2"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Core",
             "pages": [
-              "api-reference/introduction"
+              "api-reference/overview",
+              "api-reference/users",
+              "api-reference/sessions",
+              "api-reference/clients"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Organizations",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/organizations",
+              "api-reference/organization-memberships",
+              "api-reference/organization-invitations",
+              "api-reference/organization-roles",
+              "api-reference/organization-permissions",
+              "api-reference/organization-domains"
+            ]
+          },
+          {
+            "group": "Authentication",
+            "pages": [
+              "api-reference/sign-in-tokens",
+              "api-reference/invitations",
+              "api-reference/allowlist",
+              "api-reference/blocklist",
+              "api-reference/oauth-applications"
+            ]
+          },
+          {
+            "group": "Identity & Verification",
+            "pages": [
+              "api-reference/email-addresses",
+              "api-reference/phone-numbers",
+              "api-reference/domains",
+              "api-reference/saml-connections"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "api-reference/jwks",
+              "api-reference/webhooks",
+              "api-reference/instance-settings",
+              "api-reference/actor-tokens",
+              "api-reference/waitlist",
+              "api-reference/jwt-templates",
+              "api-reference/api-keys",
+              "api-reference/m2m-tokens",
+              "api-reference/billing",
+              "api-reference/testing-tokens"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

@@ -1,0 +1,355 @@
+---
+title: "Testing"
+description: "Strategies for mocking the Clerk Go SDK in your test suite."
+---
+
+The Clerk Go SDK is designed to be testable without making real network requests. There are three main approaches, each suited to different needs.
+
+---
+
+## clerktest package
+
+The SDK ships a `clerktest` package with ready-made helpers:
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/clerktest"
+```
+
+### clerktest.RoundTripper
+
+A drop-in `http.RoundTripper` implementation you can configure to return preset responses and assert on request properties.
+
+```go
+type RoundTripper struct {
+    T      *testing.T
+    Status int            // HTTP status code to return (default 200)
+    Out    json.RawMessage // Response body
+    Method string          // Assert request uses this method
+    Path   string          // Assert request path matches
+    Query  *url.Values     // Assert querystring matches
+    In     json.RawMessage // Assert request body matches
+}
+```
+
+### clerktest.GenerateJWT
+
+Generates a signed RS256 JWT for testing JWT verification paths.
+
+```go
+token, pubKey := clerktest.GenerateJWT(t, myClaims, "kid-1")
+// token is a compact JWT string.
+// pubKey is the *rsa.PublicKey that can verify the token.
+```
+
+### clerktest.Clock
+
+A manually controllable `clerk.Clock` implementation for testing time-sensitive flows such as token expiry.
+
+```go
+// Create a clock at a specific point in time.
+clock := clerktest.NewClockAt(time.Now())
+
+// Advance time by 15 minutes.
+clock.Advance(15 * time.Minute)
+
+// Use it wherever clerk.Clock is accepted.
+```
+
+---
+
+## Testing without a client
+
+When using the SDK without instantiated clients (package-level calls like `user.List(ctx, params)`), replace the global backend before the test runs.
+
+<Tabs>
+  <Tab title="Custom RoundTripper">
+    Use `clerktest.RoundTripper` (or your own implementation) to intercept HTTP calls.
+
+    ```go
+    import (
+        "encoding/json"
+        "net/http"
+        "testing"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/clerktest"
+        "github.com/clerk/clerk-sdk-go/v2/user"
+    )
+
+    func TestListUsers(t *testing.T) {
+        // Prepare the fake response body.
+        responseBody, _ := json.Marshal(map[string]any{
+            "data":        []any{},
+            "total_count": 0,
+        })
+
+        clerk.SetBackend(clerk.NewBackend(&clerk.BackendConfig{
+            HTTPClient: &http.Client{
+                Transport: &clerktest.RoundTripper{
+                    T:      t,
+                    Status: http.StatusOK,
+                    Out:    responseBody,
+                    Method: http.MethodGet,
+                    Path:   "/v1/users",
+                },
+            },
+        }))
+
+        list, err := user.List(t.Context(), &user.ListParams{})
+        if err != nil {
+            t.Fatal(err)
+        }
+        _ = list
+    }
+    ```
+  </Tab>
+  <Tab title="httptest.Server">
+    Spin up a local HTTP server and point the backend's URL at it.
+
+    ```go
+    import (
+        "net/http"
+        "net/http/httptest"
+        "testing"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/user"
+    )
+
+    func TestWithMockServer(t *testing.T) {
+        ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            w.Header().Set("Content-Type", "application/json")
+            w.Write([]byte(`{"data":[],"total_count":0}`))
+        }))
+        defer ts.Close()
+
+        clerk.SetBackend(clerk.NewBackend(&clerk.BackendConfig{
+            HTTPClient: ts.Client(),
+            URL:        &ts.URL,
+        }))
+
+        list, err := user.List(t.Context(), &user.ListParams{})
+        if err != nil {
+            t.Fatal(err)
+        }
+        _ = list
+    }
+    ```
+  </Tab>
+  <Tab title="Custom Backend">
+    Implement the `clerk.Backend` interface directly for full control.
+
+    ```go
+    import (
+        "context"
+        "testing"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+    )
+
+    type mockBackend struct{}
+
+    func (b *mockBackend) Call(
+        ctx context.Context,
+        r *clerk.APIRequest,
+        reader clerk.ResponseReader,
+    ) error {
+        reader.Read(&clerk.APIResponse{
+            StatusCode: 200,
+            RawJSON:    []byte(`{"data":[],"total_count":0}`),
+        })
+        return nil
+    }
+
+    func TestWithCustomBackend(t *testing.T) {
+        clerk.SetBackend(&mockBackend{})
+        // ... run your code under test.
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Testing with a client
+
+If you instantiate resource clients explicitly (e.g. `user.NewClient(config)`), pass a custom `HTTPClient` directly to the `ClientConfig`. This approach is safe for parallel tests because each test owns its own client and does not mutate global state.
+
+<Tabs>
+  <Tab title="Custom RoundTripper">
+    ```go
+    import (
+        "net/http"
+        "testing"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/clerktest"
+        "github.com/clerk/clerk-sdk-go/v2/user"
+    )
+
+    func TestWithClientTransport(t *testing.T) {
+        config := &clerk.ClientConfig{}
+        config.HTTPClient = &http.Client{
+            Transport: &clerktest.RoundTripper{
+                T:      t,
+                Status: http.StatusOK,
+                Out:    []byte(`{"id":"user_123"}`),
+            },
+        }
+        client := user.NewClient(config)
+        u, err := client.Get(t.Context(), "user_123")
+        if err != nil {
+            t.Fatal(err)
+        }
+        _ = u
+    }
+    ```
+  </Tab>
+  <Tab title="httptest.Server">
+    ```go
+    import (
+        "net/http"
+        "net/http/httptest"
+        "testing"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/user"
+    )
+
+    func TestWithClientMockServer(t *testing.T) {
+        ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            w.Write([]byte(`{"id":"user_123"}`))
+        }))
+        defer ts.Close()
+
+        config := &clerk.ClientConfig{}
+        config.HTTPClient = ts.Client()
+        config.URL = &ts.URL
+        client := user.NewClient(config)
+
+        u, err := client.Get(t.Context(), "user_123")
+        if err != nil {
+            t.Fatal(err)
+        }
+        _ = u
+    }
+    ```
+  </Tab>
+  <Tab title="Custom Backend">
+    Set the `Backend` field on the client after construction.
+
+    ```go
+    import (
+        "context"
+        "testing"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/user"
+    )
+
+    type mockBackend struct{}
+
+    func (b *mockBackend) Call(
+        ctx context.Context,
+        r *clerk.APIRequest,
+        reader clerk.ResponseReader,
+    ) error {
+        reader.Read(&clerk.APIResponse{
+            StatusCode: 200,
+            RawJSON:    []byte(`{"id":"user_123"}`),
+        })
+        return nil
+    }
+
+    func TestWithClientBackend(t *testing.T) {
+        client := user.NewClient(&clerk.ClientConfig{})
+        client.Backend = &mockBackend{}
+
+        u, err := client.Get(t.Context(), "user_123")
+        if err != nil {
+            t.Fatal(err)
+        }
+        _ = u
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Testing JWT verification
+
+Use `clerktest.GenerateJWT` to create real signed tokens for testing `jwt.Verify` paths, and `clerktest.NewClockAt` to control expiry:
+
+```go
+import (
+    "context"
+    "testing"
+    "time"
+
+    "github.com/clerk/clerk-sdk-go/v2"
+    "github.com/clerk/clerk-sdk-go/v2/clerktest"
+    "github.com/clerk/clerk-sdk-go/v2/jwt"
+)
+
+func TestVerifyToken(t *testing.T) {
+    now := time.Now()
+    exp := now.Add(time.Hour).Unix()
+    iat := now.Unix()
+
+    claims := map[string]any{
+        "sub": "user_abc",
+        "sid": "sess_xyz",
+        "iss": "https://clerk.your-domain.com",
+        "exp": exp,
+        "iat": iat,
+        "nbf": iat,
+    }
+    token, pubKey := clerktest.GenerateJWT(t, claims, "key-1")
+
+    jwk, err := clerk.JSONWebKeyFromPEM(rsaPublicKeyPEM(t, pubKey))
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    clock := clerktest.NewClockAt(now)
+
+    sessionClaims, err := jwt.Verify(context.Background(), &jwt.VerifyParams{
+        Token:  token,
+        JWK:    jwk,
+        Clock:  clock,
+    })
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    if sessionClaims.Subject != "user_abc" {
+        t.Errorf("unexpected subject: %s", sessionClaims.Subject)
+    }
+}
+```
+
+<Note>
+  `clerktest.GenerateJWT` returns the `crypto.PublicKey` (a `*rsa.PublicKey`). You need to PEM-encode it and pass it to `clerk.JSONWebKeyFromPEM` to obtain a `*clerk.JSONWebKey` suitable for `jwt.VerifyParams.JWK`.
+</Note>
+
+---
+
+## Parallel test safety
+
+- **Without client** (`clerk.SetBackend`): global state — avoid running tests that mutate the backend in parallel. Use `t.Setenv` patterns or run those tests serially.
+- **With client**: each test instantiates its own client with its own `HTTPClient`. Parallel execution is safe.
+
+```go
+func TestParallelSafe(t *testing.T) {
+    t.Parallel()
+
+    config := &clerk.ClientConfig{}
+    config.HTTPClient = &http.Client{Transport: &clerktest.RoundTripper{
+        T:   t,
+        Out: []byte(`{"id":"user_123"}`),
+    }}
+    client := user.NewClient(config)
+    // ...
+}
+```

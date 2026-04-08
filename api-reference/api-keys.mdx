@@ -1,0 +1,362 @@
+---
+title: "API Keys"
+description: "Create, retrieve, list, update, delete, revoke, and verify API keys for your Clerk instance."
+---
+
+The `apikey` package provides operations for managing long-lived API keys. API keys are used for machine-to-machine authentication without requiring a user session.
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/apikey"
+```
+
+---
+
+## Operations
+
+### `Create`
+
+Creates a new API key. The secret value is only returned once in the creation response.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.APIKeyWithSecret, error)
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.APIKeyWithSecret, error)
+```
+
+#### CreateParams
+
+<ParamField path="Type" type="*string">
+  The API key type. Determines the authentication mechanism.
+</ParamField>
+
+<ParamField path="Name" type="*string">
+  A human-readable name for the key.
+</ParamField>
+
+<ParamField path="Description" type="*string">
+  Optional description of the key's purpose.
+</ParamField>
+
+<ParamField path="Subject" type="*string">
+  The subject the key authenticates as (e.g. a user ID or machine ID).
+</ParamField>
+
+<ParamField path="Claims" type="json.RawMessage">
+  Custom JSON claims to include when the key is used for authentication.
+</ParamField>
+
+<ParamField path="Scopes" type="[]string">
+  List of scopes granted to this key.
+</ParamField>
+
+<ParamField path="CreatedBy" type="*string">
+  ID of the entity that created this key (for audit purposes).
+</ParamField>
+
+<ParamField path="SecondsUntilExpiration" type="*int64">
+  Number of seconds until the key expires. Omit for a non-expiring key.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    clerk.SetKey("sk_live_...")
+
+    key, err := apikey.Create(context.Background(), &apikey.CreateParams{
+        Name:        clerk.String("CI pipeline key"),
+        Description: clerk.String("Used by GitHub Actions"),
+        Scopes:      []string{"read:users", "write:sessions"},
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println("Key ID:", key.ID)
+    fmt.Println("Secret:", key.Secret) // store this securely — shown once only
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := apikey.NewClient(config)
+
+    key, err := client.Create(context.Background(), &apikey.CreateParams{
+        Name:                   clerk.String("Service account"),
+        SecondsUntilExpiration: clerk.Int64(86400 * 30), // 30 days
+    })
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  The `Secret` field is only present in the response immediately after creation. Store it securely — it cannot be retrieved again. Use `GetSecret` if you need to display it to a user later.
+</Warning>
+
+---
+
+### `Get`
+
+Returns an API key by its ID (without the secret).
+
+```go
+func Get(ctx context.Context, apiKeyID string) (*clerk.APIKey, error)
+func (c *Client) Get(ctx context.Context, apiKeyID string) (*clerk.APIKey, error)
+```
+
+```go
+key, err := apikey.Get(context.Background(), "apikey_abc123")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(key.Name, key.Expired)
+```
+
+---
+
+### `List`
+
+Returns a paginated list of API keys.
+
+```go
+func List(ctx context.Context, params *ListParams) (*clerk.APIKeyList, error)
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.APIKeyList, error)
+```
+
+#### ListParams
+
+<ParamField path="Limit" type="*int64">
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="Offset" type="*int64">
+  Number of results to skip.
+</ParamField>
+
+<ParamField path="Type" type="*string">
+  Filter by key type.
+</ParamField>
+
+<ParamField path="Subject" type="*string">
+  Filter by subject.
+</ParamField>
+
+<ParamField path="IncludeInvalid" type="*string">
+  When set, includes revoked or expired keys in the response.
+</ParamField>
+
+```go
+list, err := apikey.List(context.Background(), &apikey.ListParams{
+    ListParams: clerk.ListParams{Limit: clerk.Int64(20)},
+})
+if err != nil {
+    log.Fatal(err)
+}
+for _, k := range list.APIKeys {
+    fmt.Printf("%s: revoked=%v expired=%v\n", k.Name, k.Revoked, k.Expired)
+}
+```
+
+---
+
+### `GetSecret`
+
+Retrieves the secret for an API key. Returns only the secret value.
+
+```go
+func GetSecret(ctx context.Context, apiKeyID string) (*APIKeySecret, error)
+func (c *Client) GetSecret(ctx context.Context, apiKeyID string) (*APIKeySecret, error)
+```
+
+`APIKeySecret` has a single field: `Secret string`.
+
+```go
+secret, err := apikey.GetSecret(context.Background(), "apikey_abc123")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(secret.Secret)
+```
+
+---
+
+### `Update`
+
+Updates an existing API key's metadata and configuration.
+
+```go
+func Update(ctx context.Context, apiKeyID string, params *UpdateParams) (*clerk.APIKey, error)
+func (c *Client) Update(ctx context.Context, apiKeyID string, params *UpdateParams) (*clerk.APIKey, error)
+```
+
+#### UpdateParams
+
+<ParamField path="Claims" type="json.RawMessage">
+  New custom claims JSON object.
+</ParamField>
+
+<ParamField path="Scopes" type="[]string">
+  New list of scopes.
+</ParamField>
+
+<ParamField path="Description" type="*string">
+  New description.
+</ParamField>
+
+<ParamField path="Subject" type="*string">
+  New subject.
+</ParamField>
+
+<ParamField path="SecondsUntilExpiration" type="*int64">
+  New expiry duration in seconds.
+</ParamField>
+
+```go
+key, err := apikey.Update(context.Background(), "apikey_abc123", &apikey.UpdateParams{
+    Description: clerk.String("Updated description"),
+})
+```
+
+---
+
+### `Delete`
+
+Permanently deletes an API key.
+
+```go
+func Delete(ctx context.Context, apiKeyID string) (*clerk.DeletedResource, error)
+func (c *Client) Delete(ctx context.Context, apiKeyID string) (*clerk.DeletedResource, error)
+```
+
+```go
+deleted, err := apikey.Delete(context.Background(), "apikey_abc123")
+```
+
+---
+
+### `Revoke`
+
+Revokes an API key, preventing it from being used for authentication. The key remains visible in list results.
+
+```go
+func Revoke(ctx context.Context, apiKeyID string, params *RevokeParams) (*clerk.APIKey, error)
+func (c *Client) Revoke(ctx context.Context, apiKeyID string, params *RevokeParams) (*clerk.APIKey, error)
+```
+
+#### RevokeParams
+
+<ParamField path="RevocationReason" type="*string">
+  Optional human-readable reason for revoking the key.
+</ParamField>
+
+```go
+key, err := apikey.Revoke(context.Background(), "apikey_abc123", &apikey.RevokeParams{
+    RevocationReason: clerk.String("Employee offboarding"),
+})
+```
+
+---
+
+### `Verify`
+
+Verifies that a given secret corresponds to a valid, non-revoked, non-expired API key.
+
+```go
+func Verify(ctx context.Context, params *VerifyParams) (*clerk.APIKey, error)
+func (c *Client) Verify(ctx context.Context, params *VerifyParams) (*clerk.APIKey, error)
+```
+
+#### VerifyParams
+
+<ParamField path="Secret" type="string" required>
+  The API key secret to verify.
+</ParamField>
+
+```go
+key, err := apikey.Verify(context.Background(), &apikey.VerifyParams{
+    Secret: "ak_live_...",
+})
+if err != nil {
+    // Key is invalid, revoked, or expired
+    log.Fatal(err)
+}
+fmt.Println("Valid key for subject:", key.Subject)
+```
+
+---
+
+## Types
+
+### `clerk.APIKey`
+
+<ResponseField name="object" type="string">
+  Always `"api_key"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Unique identifier for the API key.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  The key type.
+</ResponseField>
+
+<ResponseField name="subject" type="string">
+  The subject the key authenticates as.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Human-readable name.
+</ResponseField>
+
+<ResponseField name="description" type="*string">
+  Optional description.
+</ResponseField>
+
+<ResponseField name="claims" type="json.RawMessage">
+  Custom claims associated with this key.
+</ResponseField>
+
+<ResponseField name="scopes" type="[]string">
+  Scopes granted to this key.
+</ResponseField>
+
+<ResponseField name="revoked" type="bool">
+  Whether the key has been revoked.
+</ResponseField>
+
+<ResponseField name="revocation_reason" type="*string">
+  Reason for revocation, if any.
+</ResponseField>
+
+<ResponseField name="expired" type="bool">
+  Whether the key has expired.
+</ResponseField>
+
+<ResponseField name="expiration" type="*int64">
+  Unix timestamp (milliseconds) when the key expires, if set.
+</ResponseField>
+
+<ResponseField name="created_by" type="*string">
+  ID of the entity that created this key.
+</ResponseField>
+
+<ResponseField name="last_used_at" type="*int64">
+  Unix timestamp (milliseconds) of the last time this key was used.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) when the key was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) when the key was last updated.
+</ResponseField>
+
+### `clerk.APIKeyWithSecret`
+
+Returned only by `Create`. Embeds `clerk.APIKey` and adds:
+
+<ResponseField name="secret" type="string">
+  The API key secret. Only returned once at creation time.
+</ResponseField>

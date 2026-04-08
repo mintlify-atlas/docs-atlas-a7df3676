@@ -1,0 +1,189 @@
+---
+title: "JSON Web Key Sets (JWKS)"
+description: "Fetch your Clerk instance's public JSON Web Key Set for JWT verification."
+---
+
+The `jwks` package exposes Clerk's public signing keys. These keys are used internally by the `jwt` package to verify session tokens, but you can fetch them directly when you need to verify tokens outside of the standard middleware flow — for example, in a background worker, a CLI tool, or a custom token-verification layer.
+
+<Note>
+  In normal server-side usage you do not need to call the JWKS endpoint manually.
+  The HTTP middleware and `jwt.Verify` handle key fetching and caching automatically.
+</Note>
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/jwks"
+```
+
+---
+
+## Operations
+
+### `Get`
+
+Fetches the JSON Web Key Set for your Clerk instance.
+
+```go
+func Get(ctx context.Context, params *GetParams) (*clerk.JSONWebKeySet, error)
+```
+
+#### Parameters
+
+<ParamField path="params" type="*GetParams" required>
+  Request parameters. `GetParams` has no additional fields beyond the embedded
+  `clerk.APIParams` — pass an empty struct.
+</ParamField>
+
+#### Returns
+
+`*clerk.JSONWebKeySet` — a set containing one or more `*clerk.JSONWebKey` values.
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client (global backend)">
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "log"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/jwks"
+    )
+
+    func main() {
+        clerk.SetKey("sk_live_...")
+
+        keySet, err := jwks.Get(context.Background(), &jwks.GetParams{})
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        for _, k := range keySet.Keys {
+            fmt.Printf("kid=%s alg=%s use=%s\n", k.KeyID, k.Algorithm, k.Use)
+        }
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "log"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/jwks"
+    )
+
+    func main() {
+        config := &clerk.ClientConfig{}
+        config.Key = clerk.String("sk_live_...")
+
+        client := jwks.NewClient(config)
+
+        keySet, err := client.Get(context.Background(), &jwks.GetParams{})
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        for _, k := range keySet.Keys {
+            fmt.Printf("kid=%s alg=%s use=%s\n", k.KeyID, k.Algorithm, k.Use)
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Types
+
+### `GetParams`
+
+```go
+type GetParams struct {
+    clerk.APIParams
+}
+```
+
+No additional fields. Pass `&jwks.GetParams{}`.
+
+---
+
+### `clerk.JSONWebKeySet`
+
+The response returned by `Get`.
+
+<ResponseField name="keys" type="[]*clerk.JSONWebKey">
+  The list of JSON Web Keys for this instance.
+</ResponseField>
+
+---
+
+### `clerk.JSONWebKey`
+
+Represents a single JSON Web Key.
+
+<ResponseField name="kid" type="string">
+  The key ID. Matches the `kid` header in a Clerk-issued JWT.
+</ResponseField>
+
+<ResponseField name="alg" type="string">
+  The signing algorithm (e.g. `RS256`).
+</ResponseField>
+
+<ResponseField name="use" type="string">
+  The intended use of the key (e.g. `sig` for signature verification).
+</ResponseField>
+
+<ResponseField name="key" type="any">
+  The parsed public key. The underlying type is determined by the algorithm —
+  for `RS256` this is `*rsa.PublicKey`.
+</ResponseField>
+
+---
+
+## Helper: `JSONWebKeyFromPEM`
+
+If you store your instance's public key as a PEM-encoded string (rather than
+fetching it from the API), you can construct a `JSONWebKey` directly:
+
+```go
+func clerk.JSONWebKeyFromPEM(key string) (*clerk.JSONWebKey, error)
+```
+
+```go
+jwk, err := clerk.JSONWebKeyFromPEM(os.Getenv("CLERK_PEM_PUBLIC_KEY"))
+if err != nil {
+    log.Fatal(err)
+}
+// Use jwk with jwt.Verify via VerifyParams.JWK
+```
+
+<Tip>
+  When you pass a `*clerk.JSONWebKey` to `jwt.VerifyParams.JWK`, the SDK skips
+  the JWKS network round-trip entirely, which is useful in latency-sensitive or
+  air-gapped environments.
+</Tip>
+
+---
+
+## How JWKS fits into JWT verification
+
+The `jwt.Verify` function (and the HTTP middleware) follow this sequence:
+
+1. Parse the token and extract the `kid` header.
+2. Call `jwks.Get` to retrieve the key set (results are **cached** in the
+   default backend — one fetch per process lifetime unless the key rotates).
+3. Find the key whose `KeyID` matches the token's `kid`.
+4. Verify the token signature and standard claims.
+
+You only need the `jwks` package directly when you want to inspect raw keys or
+build a custom verification flow outside the provided middleware.

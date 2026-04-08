@@ -1,0 +1,453 @@
+---
+title: 'Organization invitations'
+description: 'Create, list, retrieve, revoke, and list instance-wide invitations to organizations.'
+---
+
+Import the `organizationinvitation` package to manage organization invitations.
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/organizationinvitation"
+```
+
+## Operations
+
+### Create
+
+Creates and sends an invitation to join an organization.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.OrganizationInvitation, error)
+// Client method:
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.OrganizationInvitation, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationinvitation"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    email := "jane@example.com"
+    role := "org:member"
+    invitation, err := organizationinvitation.Create(context.Background(), &organizationinvitation.CreateParams{
+        OrganizationID: "org_123",
+        EmailAddress:   &email,
+        Role:           &role,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationinvitation"
+    )
+
+    client := organizationinvitation.NewClient(&clerk.ClientConfig{})
+
+    email := "jane@example.com"
+    role := "org:member"
+    invitation, err := client.Create(context.Background(), &organizationinvitation.CreateParams{
+        OrganizationID: "org_123",
+        EmailAddress:   &email,
+        Role:           &role,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### CreateParams
+
+<ParamField path="OrganizationID" type="string" required>
+  The ID of the organization to invite the user to.
+</ParamField>
+
+<ParamField path="EmailAddress" type="*string">
+  The email address of the person being invited.
+</ParamField>
+
+<ParamField path="Role" type="*string">
+  The role to assign to the invitee upon accepting (e.g., `"org:member"`).
+</ParamField>
+
+<ParamField path="RedirectURL" type="*string">
+  The URL the invitee is redirected to after accepting the invitation.
+</ParamField>
+
+<ParamField path="InviterUserID" type="*string">
+  The ID of the user sending the invitation.
+</ParamField>
+
+<ParamField path="PublicMetadata" type="*json.RawMessage">
+  Arbitrary metadata attached to the invitation, accessible to your frontend.
+</ParamField>
+
+<ParamField path="PrivateMetadata" type="*json.RawMessage">
+  Arbitrary metadata attached to the invitation, accessible only from the Backend API.
+</ParamField>
+
+<ParamField path="ExpiresInDays" type="*int64">
+  Number of days until the invitation expires.
+</ParamField>
+
+---
+
+### Get
+
+Retrieves the details of an organization invitation.
+
+```go
+func Get(ctx context.Context, params *GetParams) (*clerk.OrganizationInvitation, error)
+// Client method:
+func (c *Client) Get(ctx context.Context, params *GetParams) (*clerk.OrganizationInvitation, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationinvitation"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    invitation, err := organizationinvitation.Get(context.Background(), &organizationinvitation.GetParams{
+        OrganizationID: "org_123",
+        ID:             "orginv_456",
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationinvitation"
+    )
+
+    client := organizationinvitation.NewClient(&clerk.ClientConfig{})
+
+    invitation, err := client.Get(context.Background(), &organizationinvitation.GetParams{
+        OrganizationID: "org_123",
+        ID:             "orginv_456",
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### GetParams
+
+<ParamField path="OrganizationID" type="string" required>
+  The ID of the organization.
+</ParamField>
+
+<ParamField path="ID" type="string" required>
+  The ID of the invitation.
+</ParamField>
+
+---
+
+### List
+
+Returns a list of invitations for an organization.
+
+```go
+func List(ctx context.Context, params *ListParams) (*clerk.OrganizationInvitationList, error)
+// Client method:
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.OrganizationInvitationList, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationinvitation"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    statuses := []string{"pending"}
+    list, err := organizationinvitation.List(context.Background(), &organizationinvitation.ListParams{
+        OrganizationID: "org_123",
+        Statuses:       &statuses,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationinvitation"
+    )
+
+    client := organizationinvitation.NewClient(&clerk.ClientConfig{})
+
+    statuses := []string{"pending"}
+    list, err := client.List(context.Background(), &organizationinvitation.ListParams{
+        OrganizationID: "org_123",
+        Statuses:       &statuses,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### ListParams
+
+<ParamField path="OrganizationID" type="string" required>
+  The ID of the organization.
+</ParamField>
+
+<ParamField path="Limit" type="int64">
+  Maximum number of results to return. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="Offset" type="int64">
+  Number of results to skip. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="Statuses" type="*[]string">
+  Filters invitations by status. Accepted values: `"pending"`, `"accepted"`, `"revoked"`.
+</ParamField>
+
+<ParamField path="EmailAddress" type="*string">
+  Filters invitations by the invitee's email address.
+</ParamField>
+
+<ParamField path="OrderBy" type="*string">
+  The field to order results by. Prefix with `-` for descending order.
+</ParamField>
+
+---
+
+### Revoke
+
+Marks an organization invitation as revoked.
+
+```go
+func Revoke(ctx context.Context, params *RevokeParams) (*clerk.OrganizationInvitation, error)
+// Client method:
+func (c *Client) Revoke(ctx context.Context, params *RevokeParams) (*clerk.OrganizationInvitation, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationinvitation"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    requestingUserID := "user_123"
+    invitation, err := organizationinvitation.Revoke(context.Background(), &organizationinvitation.RevokeParams{
+        OrganizationID:   "org_123",
+        ID:               "orginv_456",
+        RequestingUserID: &requestingUserID,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationinvitation"
+    )
+
+    client := organizationinvitation.NewClient(&clerk.ClientConfig{})
+
+    requestingUserID := "user_123"
+    invitation, err := client.Revoke(context.Background(), &organizationinvitation.RevokeParams{
+        OrganizationID:   "org_123",
+        ID:               "orginv_456",
+        RequestingUserID: &requestingUserID,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### RevokeParams
+
+<ParamField path="OrganizationID" type="string" required>
+  The ID of the organization.
+</ParamField>
+
+<ParamField path="ID" type="string" required>
+  The ID of the invitation to revoke.
+</ParamField>
+
+<ParamField path="RequestingUserID" type="*string">
+  The ID of the user requesting the revocation.
+</ParamField>
+
+---
+
+### ListFromInstance
+
+Lists all organization invitations across the entire instance.
+
+```go
+func ListFromInstance(ctx context.Context, params *ListFromInstanceParams) (*clerk.OrganizationInvitationList, error)
+// Client method:
+func (c *Client) ListFromInstance(ctx context.Context, params *ListFromInstanceParams) (*clerk.OrganizationInvitationList, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationinvitation"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    statuses := []string{"pending"}
+    list, err := organizationinvitation.ListFromInstance(context.Background(), &organizationinvitation.ListFromInstanceParams{
+        Statuses: &statuses,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationinvitation"
+    )
+
+    client := organizationinvitation.NewClient(&clerk.ClientConfig{})
+
+    statuses := []string{"pending"}
+    list, err := client.ListFromInstance(context.Background(), &organizationinvitation.ListFromInstanceParams{
+        Statuses: &statuses,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### ListFromInstanceParams
+
+<ParamField path="Limit" type="int64">
+  Maximum number of results to return. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="Offset" type="int64">
+  Number of results to skip. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="Statuses" type="*[]string">
+  Filters invitations by status. Accepted values: `"pending"`, `"accepted"`, `"revoked"`.
+</ParamField>
+
+<ParamField path="Query" type="*string">
+  Filters invitations by a search query.
+</ParamField>
+
+<ParamField path="OrderBy" type="*string">
+  The field to order results by. Prefix with `-` for descending order.
+</ParamField>
+
+---
+
+## Response types
+
+### OrganizationInvitation
+
+<ResponseField name="object" type="string">
+  Always `"organization_invitation"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  The unique identifier for the invitation.
+</ResponseField>
+
+<ResponseField name="email_address" type="string">
+  The email address of the invited person.
+</ResponseField>
+
+<ResponseField name="role" type="string">
+  The role key assigned to the invitee upon acceptance.
+</ResponseField>
+
+<ResponseField name="role_name" type="string">
+  The human-readable name of the assigned role.
+</ResponseField>
+
+<ResponseField name="organization_id" type="string">
+  The ID of the organization associated with this invitation.
+</ResponseField>
+
+<ResponseField name="public_organization_data" type="object">
+  Public data about the organization.
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">The organization's unique identifier.</ResponseField>
+    <ResponseField name="name" type="string">The organization's name.</ResponseField>
+    <ResponseField name="slug" type="string">The organization's slug.</ResponseField>
+    <ResponseField name="image_url" type="string | null">URL of the organization's logo image.</ResponseField>
+    <ResponseField name="has_image" type="boolean">Whether the organization has a logo image.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The current status of the invitation. One of `"pending"`, `"accepted"`, or `"revoked"`.
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  The invitation URL sent to the invitee.
+</ResponseField>
+
+<ResponseField name="public_metadata" type="object">
+  Arbitrary metadata accessible to your frontend.
+</ResponseField>
+
+<ResponseField name="private_metadata" type="object">
+  Arbitrary metadata accessible only from the Backend API.
+</ResponseField>
+
+<ResponseField name="expires_at" type="integer | null">
+  Unix timestamp (milliseconds) when the invitation expires.
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  Unix timestamp (milliseconds) when the invitation was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="integer">
+  Unix timestamp (milliseconds) when the invitation was last updated.
+</ResponseField>
+
+### OrganizationInvitationList
+
+<ResponseField name="data" type="OrganizationInvitation[]">
+  The list of organization invitations.
+</ResponseField>
+
+<ResponseField name="total_count" type="integer">
+  The total number of invitations matching the query.
+</ResponseField>

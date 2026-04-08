@@ -1,0 +1,305 @@
+---
+title: "Migration guide: v1 to v2"
+description: "Step-by-step instructions for upgrading the Clerk Go SDK from v1 to v2."
+---
+
+The `v2` version of the Clerk Go SDK is a complete rewrite with breaking changes throughout the public API. This guide covers every change you need to make to migrate from `v1`.
+
+<Note>
+  While `v1` is not actively sunset, only the current `v2` major version receives regular bug fixes and security updates.
+</Note>
+
+---
+
+## Before you start
+
+<Steps>
+  <Step title="Update the Go version requirement">
+    The minimum supported Go version for `v2` is **Go 1.19**. Ensure your `go.mod` specifies at least this version:
+
+    ```go
+    // go.mod
+    go 1.19
+    ```
+  </Step>
+
+  <Step title="Update the import path">
+    Change all import paths from `github.com/clerk/clerk-sdk-go` to `github.com/clerk/clerk-sdk-go/v2`:
+
+    ```bash
+    go get github.com/clerk/clerk-sdk-go/v2@latest
+    ```
+
+    Then update your imports:
+
+    ```go
+    // Before
+    import "github.com/clerk/clerk-sdk-go"
+
+    // After
+    import "github.com/clerk/clerk-sdk-go/v2"
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Setting the API key
+
+In `v1`, you created a client and passed the key to it. In `v2`, you set the key at the package level once.
+
+```go
+// Before (v1)
+client, err := clerk.NewClient("sk_live_XXX")
+
+// After (v2)
+clerk.SetKey("sk_live_XXX")
+```
+
+For multi-tenant scenarios requiring separate keys, use per-client configuration:
+
+```go
+// v2 with a client
+config := &clerk.ClientConfig{}
+config.Key = clerk.String("sk_live_TENANT_XXX")
+client := user.NewClient(config)
+```
+
+---
+
+## Invoking API operations
+
+In `v1`, all operations were methods on a `clerk.Client` via service objects. In `v2`, operations are package-level functions (or methods on a typed client) in per-resource packages.
+
+```go
+// Before (v1) — service-based
+client, _ := clerk.NewClient("sk_live_XXX")
+org, err := client.Organizations().Create(clerk.CreateOrganizationParams{
+    Name: "Acme Inc",
+})
+
+// After (v2) — resource package functions
+import "github.com/clerk/clerk-sdk-go/v2/organization"
+
+ctx := context.Background()
+clerk.SetKey("sk_live_XXX")
+org, err := organization.Create(ctx, &organization.CreateParams{
+    Name: clerk.String("Acme Inc"),
+})
+```
+
+The general migration pattern is:
+
+```go
+// Before
+client.$Resource$().Create(clerk.Create$Resource$Params{})
+
+// After
+$resource$.Create(ctx, &$resource$.CreateParams{})
+```
+
+---
+
+## context.Context is now required
+
+All `v2` API operations accept a `context.Context` as their first argument. Pass `context.Background()` if you don't have a more specific context.
+
+```go
+ctx := context.Background()
+usr, err := user.Get(ctx, "user_123")
+```
+
+---
+
+## Pointer fields in params structs
+
+In `v2`, every optional field in a `*Params` struct is a pointer. Use the helper functions to avoid verbose `&myVar` patterns:
+
+```go
+clerk.String("hello")   // *string
+clerk.Bool(true)        // *bool
+clerk.Int64(10)         // *int64
+clerk.JSONRawMessage(b) // *json.RawMessage
+```
+
+Example:
+
+```go
+domain.Create(context.Background(), &domain.CreateParams{
+    Name:        clerk.String("clerk.com"),
+    IsSatellite: clerk.Bool(true),
+})
+```
+
+---
+
+## List operation responses
+
+List operations in `v2` always return a struct with a `TotalCount` field and a typed slice. The exact field name for the slice varies by resource.
+
+```go
+// Before (v1)
+limit := 10
+users, err := client.Users().ListAll(clerk.ListAllUserParams{
+    Limit: &limit,
+})
+if len(users) > 0 {
+    fmt.Println(users[0].ID)
+}
+
+// After (v2)
+params := &user.ListParams{}
+params.Limit = clerk.Int64(10)
+list, err := user.List(context.Background(), params)
+if list.TotalCount > 0 {
+    fmt.Println(list.Users[0].ID)
+}
+```
+
+---
+
+## Error type renamed
+
+The `clerk.ErrorResponse` type has been renamed to `clerk.APIErrorResponse`. The new type provides additional fields.
+
+```go
+// Before (v1)
+if errResp, ok := err.(*clerk.ErrorResponse); ok {
+    errResp.Errors
+}
+
+// After (v2)
+if apiErr, ok := err.(*clerk.APIErrorResponse); ok {
+    apiErr.TraceID            // new: request trace ID
+    apiErr.Error()            // JSON-marshalled error
+    apiErr.Response.RawJSON   // new: raw response body
+    apiErr.Errors             // []clerk.Error (same structure)
+}
+```
+
+---
+
+## HTTP middleware
+
+The `v1` middleware functions living on the `clerk` package are replaced by dedicated functions in the `github.com/clerk/clerk-sdk-go/v2/http` package.
+
+```go
+// Before (v1)
+import "github.com/clerk/clerk-sdk-go"
+
+mux.Handle("/session", clerk.WithSessionV2(client)(handler))
+mux.Handle("/protected", clerk.RequireSessionV2(client)(handler))
+
+// After (v2)
+import clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
+
+mux.Handle("/session", clerkhttp.WithHeaderAuthorization()(handler))
+mux.Handle("/protected", clerkhttp.RequireHeaderAuthorization()(handler))
+```
+
+Reading session claims from context:
+
+```go
+// Before (v1)
+sessionClaims, ok := clerk.SessionFromContext(r.Context())
+
+// After (v2)
+sessionClaims, ok := clerk.SessionClaimsFromContext(r.Context())
+```
+
+<Warning>
+  Cookie-based authentication is **not supported** in `v2`. Both middleware functions require a Bearer token in the `Authorization` header. If your application relies on cookie-based sessions you will need to extract the token from the cookie manually and pass it via a custom `AuthorizationJWTExtractor` option.
+</Warning>
+
+### Middleware option renames
+
+All available `v1` options are preserved in `v2` but have been renamed:
+
+| v1 option | v2 option |
+|---|---|
+| `WithAuthorizedParty(...string)` | `AuthorizedPartyMatches(...string)` |
+| `WithLeeway(time.Duration)` | `Leeway(time.Duration)` |
+| `WithJWTVerificationKey(string)` | `JSONWebKey(string)` |
+| `WithSatelliteDomain(string)` | `Satellite(bool)` |
+| `WithProxyURL(string)` | `ProxyURL(string)` |
+| `WithCustomClaims(interface{})` | `CustomClaimsConstructor(func(context.Context) any)` |
+
+`v2` also adds two new options with no `v1` equivalent:
+
+- `AuthorizedParty(func(string) bool)` — custom `azp` validation function
+- `JWKSClient(*jwks.Client)` — custom JWKS client
+
+Full middleware example after migration:
+
+```go
+import (
+    "net/http"
+    "github.com/clerk/clerk-sdk-go/v2"
+    clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
+)
+
+func main() {
+    clerk.SetKey("sk_live_XXX")
+
+    mux := http.NewServeMux()
+    mux.Handle(
+        "/protected",
+        clerkhttp.RequireHeaderAuthorization(
+            clerkhttp.AuthorizedPartyMatches("https://app.example.com"),
+            clerkhttp.Leeway(5*time.Second),
+        )(http.HandlerFunc(handleProtected)),
+    )
+    http.ListenAndServe(":3000", mux)
+}
+
+func handleProtected(w http.ResponseWriter, r *http.Request) {
+    claims, ok := clerk.SessionClaimsFromContext(r.Context())
+    if !ok {
+        w.WriteHeader(http.StatusUnauthorized)
+        return
+    }
+    fmt.Fprintln(w, claims.Subject)
+}
+```
+
+---
+
+## Token verification
+
+The `client.VerifyToken` method is replaced by `jwt.Verify` from the `github.com/clerk/clerk-sdk-go/v2/jwt` package.
+
+```go
+// Before (v1)
+client, _ := clerk.NewClient("sk_live_XXXX")
+claims, err := client.VerifyToken(sessionToken)
+
+// After (v2)
+import "github.com/clerk/clerk-sdk-go/v2/jwt"
+
+claims, err := jwt.Verify(context.Background(), &jwt.VerifyParams{
+    Token: sessionToken,
+})
+```
+
+Key differences in `v2`:
+
+- You can supply a pre-fetched JWK via `VerifyParams.JWK` to avoid a network call.
+- You can supply a `*jwks.Client` via `VerifyParams.JWKSClient` to control JWKS fetching.
+- `jwt.Verify` does **not** cache the JWK. Use the HTTP middleware for built-in one-hour JWK caching.
+
+---
+
+## Summary of breaking changes
+
+| Area | v1 | v2 |
+|---|---|---|
+| API key | `clerk.NewClient("sk_...")` | `clerk.SetKey("sk_...")` |
+| Operations | `client.$Resource$().Method(params)` | `$resource$.Method(ctx, &params)` |
+| Context | Not required | Required as first argument |
+| Param fields | Mix of value and pointer types | All optional fields are pointers |
+| Error type | `*clerk.ErrorResponse` | `*clerk.APIErrorResponse` |
+| Middleware import | `github.com/clerk/clerk-sdk-go` | `github.com/clerk/clerk-sdk-go/v2/http` |
+| Middleware names | `WithSessionV2`, `RequireSessionV2` | `WithHeaderAuthorization`, `RequireHeaderAuthorization` |
+| Context helper | `clerk.SessionFromContext` | `clerk.SessionClaimsFromContext` |
+| Token verify | `client.VerifyToken(token)` | `jwt.Verify(ctx, &jwt.VerifyParams{Token: token})` |
+| Cookie auth | Supported | **Not supported** |

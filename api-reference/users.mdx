@@ -1,0 +1,1201 @@
+---
+title: "Users"
+description: "Create, retrieve, update, and delete users. Manage profile images, metadata, MFA, bans, locks, and more."
+---
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/user"
+```
+
+## The User object
+
+<ResponseField name="ID" type="string">
+  The unique identifier for the user.
+</ResponseField>
+
+<ResponseField name="Object" type="string">
+  Always `"user"`.
+</ResponseField>
+
+<ResponseField name="Username" type="*string">
+  The user's username, if set.
+</ResponseField>
+
+<ResponseField name="FirstName" type="*string">
+  The user's first name, if set.
+</ResponseField>
+
+<ResponseField name="LastName" type="*string">
+  The user's last name, if set.
+</ResponseField>
+
+<ResponseField name="ImageURL" type="*string">
+  URL of the user's profile image.
+</ResponseField>
+
+<ResponseField name="HasImage" type="bool">
+  Whether the user has a profile image.
+</ResponseField>
+
+<ResponseField name="PrimaryEmailAddressID" type="*string">
+  ID of the user's primary email address.
+</ResponseField>
+
+<ResponseField name="PrimaryPhoneNumberID" type="*string">
+  ID of the user's primary phone number.
+</ResponseField>
+
+<ResponseField name="PrimaryWeb3WalletID" type="*string">
+  ID of the user's primary Web3 wallet.
+</ResponseField>
+
+<ResponseField name="PasswordEnabled" type="bool">
+  Whether the user has password authentication enabled.
+</ResponseField>
+
+<ResponseField name="TwoFactorEnabled" type="bool">
+  Whether the user has two-factor authentication enabled.
+</ResponseField>
+
+<ResponseField name="TOTPEnabled" type="bool">
+  Whether the user has TOTP enabled.
+</ResponseField>
+
+<ResponseField name="BackupCodeEnabled" type="bool">
+  Whether the user has backup codes enabled.
+</ResponseField>
+
+<ResponseField name="EmailAddresses" type="[]*EmailAddress">
+  List of the user's email addresses.
+</ResponseField>
+
+<ResponseField name="PhoneNumbers" type="[]*PhoneNumber">
+  List of the user's phone numbers.
+</ResponseField>
+
+<ResponseField name="Web3Wallets" type="[]*Web3Wallet">
+  List of the user's Web3 wallets.
+</ResponseField>
+
+<ResponseField name="Passkeys" type="[]*Passkey">
+  List of the user's passkeys.
+</ResponseField>
+
+<ResponseField name="ExternalAccounts" type="[]*ExternalAccount">
+  List of the user's connected external (OAuth) accounts.
+</ResponseField>
+
+<ResponseField name="SAMLAccounts" type="[]*SAMLAccount">
+  List of the user's SAML accounts.
+</ResponseField>
+
+<ResponseField name="EnterpriseAccounts" type="[]*EnterpriseAccount">
+  List of the user's enterprise accounts.
+</ResponseField>
+
+<ResponseField name="PublicMetadata" type="json.RawMessage">
+  Public metadata attached to the user. Readable on the frontend.
+</ResponseField>
+
+<ResponseField name="PrivateMetadata" type="json.RawMessage">
+  Private metadata attached to the user. Only accessible server-side.
+</ResponseField>
+
+<ResponseField name="UnsafeMetadata" type="json.RawMessage">
+  Unsafe metadata. Readable and writable on the frontend.
+</ResponseField>
+
+<ResponseField name="ExternalID" type="*string">
+  An external identifier for the user set by your application.
+</ResponseField>
+
+<ResponseField name="Banned" type="bool">
+  Whether the user is banned.
+</ResponseField>
+
+<ResponseField name="Locked" type="bool">
+  Whether the user is locked.
+</ResponseField>
+
+<ResponseField name="LockoutExpiresInSeconds" type="*int64">
+  Seconds until the lockout expires, if the user is locked.
+</ResponseField>
+
+<ResponseField name="VerificationAttemptsRemaining" type="*int64">
+  Number of verification attempts remaining before lockout.
+</ResponseField>
+
+<ResponseField name="DeleteSelfEnabled" type="bool">
+  Whether the user is allowed to delete their own account.
+</ResponseField>
+
+<ResponseField name="CreateOrganizationEnabled" type="bool">
+  Whether the user is allowed to create organizations.
+</ResponseField>
+
+<ResponseField name="CreateOrganizationsLimit" type="*int">
+  Maximum number of organizations the user may create. `nil` means unlimited.
+</ResponseField>
+
+<ResponseField name="Locale" type="*string">
+  The user's preferred locale in BCP-47 format.
+</ResponseField>
+
+<ResponseField name="LastSignInAt" type="*int64">
+  Unix timestamp (milliseconds) of the user's last sign-in.
+</ResponseField>
+
+<ResponseField name="LastActiveAt" type="*int64">
+  Unix timestamp (milliseconds) of the user's last activity.
+</ResponseField>
+
+<ResponseField name="MFAEnabledAt" type="*int64">
+  Unix timestamp (milliseconds) when MFA was enabled.
+</ResponseField>
+
+<ResponseField name="MFADisabledAt" type="*int64">
+  Unix timestamp (milliseconds) when MFA was disabled.
+</ResponseField>
+
+<ResponseField name="LegalAcceptedAt" type="*int64">
+  Unix timestamp (milliseconds) when the user accepted legal terms.
+</ResponseField>
+
+<ResponseField name="PasswordLastUpdatedAt" type="*int64">
+  Unix timestamp (milliseconds) when the user last updated their password.
+</ResponseField>
+
+<ResponseField name="CreatedAt" type="int64">
+  Unix timestamp (milliseconds) when the user was created.
+</ResponseField>
+
+<ResponseField name="UpdatedAt" type="int64">
+  Unix timestamp (milliseconds) when the user was last updated.
+</ResponseField>
+
+---
+
+## Create
+
+Creates a new user.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.User, error)
+// Client method:
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.User, error)
+```
+
+### CreateParams
+
+<ParamField path="EmailAddresses" type="*[]string">
+  Email addresses to associate with the user.
+</ParamField>
+
+<ParamField path="PhoneNumbers" type="*[]string">
+  Phone numbers to associate with the user.
+</ParamField>
+
+<ParamField path="Web3Wallets" type="*[]string">
+  Web3 wallet addresses to associate with the user.
+</ParamField>
+
+<ParamField path="Username" type="*string">
+  The user's username.
+</ParamField>
+
+<ParamField path="Password" type="*string">
+  The user's plaintext password.
+</ParamField>
+
+<ParamField path="FirstName" type="*string">
+  The user's first name.
+</ParamField>
+
+<ParamField path="LastName" type="*string">
+  The user's last name.
+</ParamField>
+
+<ParamField path="ExternalID" type="*string">
+  An external identifier for the user in your system.
+</ParamField>
+
+<ParamField path="PublicMetadata" type="*json.RawMessage">
+  Public metadata for the user.
+</ParamField>
+
+<ParamField path="PrivateMetadata" type="*json.RawMessage">
+  Private metadata for the user.
+</ParamField>
+
+<ParamField path="UnsafeMetadata" type="*json.RawMessage">
+  Unsafe metadata for the user.
+</ParamField>
+
+<ParamField path="PasswordDigest" type="*string">
+  A pre-hashed password digest. Use with `PasswordHasher`.
+</ParamField>
+
+<ParamField path="PasswordHasher" type="*string">
+  The hashing algorithm used for `PasswordDigest`.
+</ParamField>
+
+<ParamField path="SkipPasswordRequirement" type="*bool">
+  Skip the password requirement when creating the user.
+</ParamField>
+
+<ParamField path="SkipPasswordChecks" type="*bool">
+  Skip password strength validation.
+</ParamField>
+
+<ParamField path="TOTPSecret" type="*string">
+  A TOTP secret to assign to the user.
+</ParamField>
+
+<ParamField path="BackupCodes" type="*[]string">
+  Backup codes to assign to the user.
+</ParamField>
+
+<ParamField path="DeleteSelfEnabled" type="*bool">
+  Whether the user may delete their own account.
+</ParamField>
+
+<ParamField path="CreateOrganizationEnabled" type="*bool">
+  Whether the user may create organizations.
+</ParamField>
+
+<ParamField path="CreateOrganizationsLimit" type="*int">
+  Maximum number of organizations the user may create.
+</ParamField>
+
+<ParamField path="LegalAcceptedAt" type="*string">
+  Timestamp when the user accepted legal terms, in RFC3339 format.
+</ParamField>
+
+<ParamField path="SkipLegalChecks" type="*bool">
+  Skip legal acceptance validation.
+</ParamField>
+
+<ParamField path="CreatedAt" type="*string">
+  Override the user creation timestamp, in RFC3339 format.
+</ParamField>
+
+<ParamField path="Locale" type="*string">
+  The user's preferred locale in BCP-47 format.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```go Package-level
+u, err := user.Create(context.Background(), &user.CreateParams{
+    EmailAddresses: &[]string{"jane@example.com"},
+    FirstName:      clerk.String("Jane"),
+    LastName:       clerk.String("Doe"),
+    Password:       clerk.String("s3cur3p@ss"),
+})
+```
+
+```go Client struct
+cfg := &clerk.ClientConfig{}
+cfg.Key = clerk.String("sk_live_...")
+c := user.NewClient(cfg)
+
+u, err := c.Create(context.Background(), &user.CreateParams{
+    EmailAddresses: &[]string{"jane@example.com"},
+    FirstName:      clerk.String("Jane"),
+    LastName:       clerk.String("Doe"),
+    Password:       clerk.String("s3cur3p@ss"),
+})
+```
+</CodeGroup>
+
+---
+
+## Get
+
+Retrieves details about a user by ID.
+
+```go
+func Get(ctx context.Context, id string) (*clerk.User, error)
+// Client method:
+func (c *Client) Get(ctx context.Context, id string) (*clerk.User, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+u, err := user.Get(context.Background(), "user_abc123")
+```
+
+```go Client struct
+u, err := c.Get(context.Background(), "user_abc123")
+```
+</CodeGroup>
+
+---
+
+## Update
+
+Updates a user's attributes. Only fields that are set (non-nil) are sent to the API.
+
+```go
+func Update(ctx context.Context, id string, params *UpdateParams) (*clerk.User, error)
+// Client method:
+func (c *Client) Update(ctx context.Context, id string, params *UpdateParams) (*clerk.User, error)
+```
+
+### UpdateParams
+
+<ParamField path="FirstName" type="*string">
+  The user's first name.
+</ParamField>
+
+<ParamField path="LastName" type="*string">
+  The user's last name.
+</ParamField>
+
+<ParamField path="PrimaryEmailAddressID" type="*string">
+  ID of the email address to set as primary.
+</ParamField>
+
+<ParamField path="NotifyPrimaryEmailAddressChanged" type="*bool">
+  Whether to send a notification when the primary email changes.
+</ParamField>
+
+<ParamField path="PrimaryPhoneNumberID" type="*string">
+  ID of the phone number to set as primary.
+</ParamField>
+
+<ParamField path="PrimaryWeb3WalletID" type="*string">
+  ID of the Web3 wallet to set as primary.
+</ParamField>
+
+<ParamField path="Username" type="*string">
+  The user's username.
+</ParamField>
+
+<ParamField path="ProfileImageID" type="*string">
+  ID of the profile image to set.
+</ParamField>
+
+<ParamField path="ProfileImage" type="*string">
+  Base64-encoded profile image data.
+</ParamField>
+
+<ParamField path="Password" type="*string">
+  New plaintext password.
+</ParamField>
+
+<ParamField path="PasswordDigest" type="*string">
+  Pre-hashed password digest. Use with `PasswordHasher`.
+</ParamField>
+
+<ParamField path="PasswordHasher" type="*string">
+  Hashing algorithm used for `PasswordDigest`.
+</ParamField>
+
+<ParamField path="SkipPasswordChecks" type="*bool">
+  Skip password strength validation.
+</ParamField>
+
+<ParamField path="SignOutOfOtherSessions" type="*bool">
+  Revoke all other active sessions after password change.
+</ParamField>
+
+<ParamField path="ExternalID" type="*string">
+  External identifier for the user in your system.
+</ParamField>
+
+<ParamField path="PublicMetadata" type="*json.RawMessage">
+  Public metadata for the user.
+</ParamField>
+
+<ParamField path="PrivateMetadata" type="*json.RawMessage">
+  Private metadata for the user.
+</ParamField>
+
+<ParamField path="UnsafeMetadata" type="*json.RawMessage">
+  Unsafe metadata for the user.
+</ParamField>
+
+<ParamField path="TOTPSecret" type="*string">
+  A TOTP secret to assign to the user.
+</ParamField>
+
+<ParamField path="BackupCodes" type="*[]string">
+  Backup codes to assign to the user.
+</ParamField>
+
+<ParamField path="DeleteSelfEnabled" type="*bool">
+  Whether the user may delete their own account.
+</ParamField>
+
+<ParamField path="CreateOrganizationEnabled" type="*bool">
+  Whether the user may create organizations.
+</ParamField>
+
+<ParamField path="CreateOrganizationsLimit" type="*int">
+  Maximum number of organizations the user may create.
+</ParamField>
+
+<ParamField path="LegalAcceptedAt" type="*string">
+  Timestamp when the user accepted legal terms, in RFC3339 format.
+</ParamField>
+
+<ParamField path="SkipLegalChecks" type="*bool">
+  Skip legal acceptance validation.
+</ParamField>
+
+<ParamField path="CreatedAt" type="*string">
+  Override the user creation timestamp, in RFC3339 format.
+</ParamField>
+
+<ParamField path="Locale" type="*string">
+  The user's preferred locale in BCP-47 format.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```go Package-level
+u, err := user.Update(context.Background(), "user_abc123", &user.UpdateParams{
+    FirstName: clerk.String("Jane"),
+    LastName:  clerk.String("Smith"),
+})
+```
+
+```go Client struct
+u, err := c.Update(context.Background(), "user_abc123", &user.UpdateParams{
+    FirstName: clerk.String("Jane"),
+    LastName:  clerk.String("Smith"),
+})
+```
+</CodeGroup>
+
+---
+
+## UpdateProfileImage
+
+Sets or replaces the user's profile image. The file is sent as a multipart upload.
+
+```go
+func UpdateProfileImage(ctx context.Context, id string, params *UpdateProfileImageParams) (*clerk.User, error)
+// Client method:
+func (c *Client) UpdateProfileImage(ctx context.Context, id string, params *UpdateProfileImageParams) (*clerk.User, error)
+```
+
+### UpdateProfileImageParams
+
+<ParamField path="File" type="multipart.File" required>
+  The image file to upload.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```go Package-level
+f, _ := os.Open("avatar.png")
+u, err := user.UpdateProfileImage(context.Background(), "user_abc123", &user.UpdateProfileImageParams{
+    File: f,
+})
+```
+
+```go Client struct
+f, _ := os.Open("avatar.png")
+u, err := c.UpdateProfileImage(context.Background(), "user_abc123", &user.UpdateProfileImageParams{
+    File: f,
+})
+```
+</CodeGroup>
+
+---
+
+## DeleteProfileImage
+
+Deletes the user's profile image and returns the updated user.
+
+```go
+func DeleteProfileImage(ctx context.Context, id string) (*clerk.User, error)
+// Client method:
+func (c *Client) DeleteProfileImage(ctx context.Context, id string) (*clerk.User, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+u, err := user.DeleteProfileImage(context.Background(), "user_abc123")
+```
+
+```go Client struct
+u, err := c.DeleteProfileImage(context.Background(), "user_abc123")
+```
+</CodeGroup>
+
+---
+
+## UpdateMetadata
+
+Updates the user's metadata by **merging** the provided values with the existing ones.
+
+```go
+func UpdateMetadata(ctx context.Context, id string, params *UpdateMetadataParams) (*clerk.User, error)
+// Client method:
+func (c *Client) UpdateMetadata(ctx context.Context, id string, params *UpdateMetadataParams) (*clerk.User, error)
+```
+
+### UpdateMetadataParams
+
+<ParamField path="PublicMetadata" type="*json.RawMessage">
+  Public metadata to merge.
+</ParamField>
+
+<ParamField path="PrivateMetadata" type="*json.RawMessage">
+  Private metadata to merge.
+</ParamField>
+
+<ParamField path="UnsafeMetadata" type="*json.RawMessage">
+  Unsafe metadata to merge.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```go Package-level
+raw := json.RawMessage(`{"plan":"pro"}`)
+u, err := user.UpdateMetadata(context.Background(), "user_abc123", &user.UpdateMetadataParams{
+    PublicMetadata: clerk.JSONRawMessage(raw),
+})
+```
+
+```go Client struct
+raw := json.RawMessage(`{"plan":"pro"}`)
+u, err := c.UpdateMetadata(context.Background(), "user_abc123", &user.UpdateMetadataParams{
+    PublicMetadata: clerk.JSONRawMessage(raw),
+})
+```
+</CodeGroup>
+
+---
+
+## Delete
+
+Deletes a user permanently.
+
+```go
+func Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+// Client method:
+func (c *Client) Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+deleted, err := user.Delete(context.Background(), "user_abc123")
+```
+
+```go Client struct
+deleted, err := c.Delete(context.Background(), "user_abc123")
+```
+</CodeGroup>
+
+---
+
+## List
+
+Returns a paginated list of users. Internally makes two API calls: one to fetch the users and one to fetch the total count.
+
+```go
+func List(ctx context.Context, params *ListParams) (*clerk.UserList, error)
+// Client method:
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.UserList, error)
+```
+
+`clerk.UserList` has two fields: `Users []*clerk.User` and `TotalCount int64`.
+
+### ListParams
+
+<ParamField path="Limit" type="*int64">
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="Offset" type="*int64">
+  Number of results to skip.
+</ParamField>
+
+<ParamField path="OrderBy" type="*string">
+  Field to sort by. Prefix with `-` for descending order.
+</ParamField>
+
+<ParamField path="Query" type="*string">
+  Free-text search across name, email, phone number, and username.
+</ParamField>
+
+<ParamField path="EmailAddressQuery" type="*string">
+  Filter by email address (partial match).
+</ParamField>
+
+<ParamField path="PhoneNumberQuery" type="*string">
+  Filter by phone number (partial match).
+</ParamField>
+
+<ParamField path="UsernameQuery" type="*string">
+  Filter by username (partial match).
+</ParamField>
+
+<ParamField path="NameQuery" type="*string">
+  Filter by name (partial match).
+</ParamField>
+
+<ParamField path="Banned" type="*bool">
+  Filter to only banned (`true`) or non-banned (`false`) users.
+</ParamField>
+
+<ParamField path="EmailAddresses" type="[]string">
+  Filter by exact email address match. Accepts multiple values.
+</ParamField>
+
+<ParamField path="ExternalIDs" type="[]string">
+  Filter by external ID. Accepts multiple values.
+</ParamField>
+
+<ParamField path="PhoneNumbers" type="[]string">
+  Filter by exact phone number match. Accepts multiple values.
+</ParamField>
+
+<ParamField path="Web3Wallets" type="[]string">
+  Filter by Web3 wallet address. Accepts multiple values.
+</ParamField>
+
+<ParamField path="Usernames" type="[]string">
+  Filter by exact username match. Accepts multiple values.
+</ParamField>
+
+<ParamField path="UserIDs" type="[]string">
+  Filter by user ID. Accepts multiple values.
+</ParamField>
+
+<ParamField path="OrganizationIDs" type="[]string">
+  Filter by organization membership. Prefix IDs with `+` (include) or `-` (exclude). Accepts up to 100 values.
+</ParamField>
+
+<ParamField path="CreatedAtBefore" type="*int64">
+  Unix timestamp (milliseconds). Return users created before this time.
+</ParamField>
+
+<ParamField path="CreatedAtAfter" type="*int64">
+  Unix timestamp (milliseconds). Return users created after this time.
+</ParamField>
+
+<ParamField path="LastActiveAtBefore" type="*int64">
+  Unix timestamp (milliseconds). Return users last active before this time.
+</ParamField>
+
+<ParamField path="LastActiveAtAfter" type="*int64">
+  Unix timestamp (milliseconds). Return users last active after this time.
+</ParamField>
+
+<ParamField path="LastSignInAtBefore" type="*int64">
+  Unix timestamp (milliseconds). Return users who last signed in before this time.
+</ParamField>
+
+<ParamField path="LastSignInAtAfter" type="*int64">
+  Unix timestamp (milliseconds). Return users who last signed in after this time.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```go Package-level
+list, err := user.List(context.Background(), &user.ListParams{
+    ListParams: clerk.ListParams{
+        Limit:  clerk.Int64(20),
+        Offset: clerk.Int64(0),
+    },
+    Query: clerk.String("jane"),
+})
+```
+
+```go Client struct
+list, err := c.List(context.Background(), &user.ListParams{
+    ListParams: clerk.ListParams{
+        Limit:  clerk.Int64(20),
+        Offset: clerk.Int64(0),
+    },
+    Query: clerk.String("jane"),
+})
+```
+</CodeGroup>
+
+---
+
+## Count
+
+Returns the total count of users that match the given filters. Accepts the same `ListParams` as `List`.
+
+```go
+func Count(ctx context.Context, params *ListParams) (*user.TotalCount, error)
+// Client method:
+func (c *Client) Count(ctx context.Context, params *ListParams) (*user.TotalCount, error)
+```
+
+`user.TotalCount` has a single field: `TotalCount int64`.
+
+### Example
+
+<CodeGroup>
+```go Package-level
+tc, err := user.Count(context.Background(), &user.ListParams{
+    Banned: clerk.Bool(true),
+})
+```
+
+```go Client struct
+tc, err := c.Count(context.Background(), &user.ListParams{
+    Banned: clerk.Bool(true),
+})
+```
+</CodeGroup>
+
+---
+
+## ListOAuthAccessTokens
+
+Retrieves a paginated list of the user's OAuth access tokens for a specific provider.
+
+```go
+func ListOAuthAccessTokens(ctx context.Context, params *ListOAuthAccessTokensParams) (*clerk.OAuthAccessTokenList, error)
+// Client method:
+func (c *Client) ListOAuthAccessTokens(ctx context.Context, params *ListOAuthAccessTokensParams) (*clerk.OAuthAccessTokenList, error)
+```
+
+### ListOAuthAccessTokensParams
+
+<ParamField path="ID" type="string" required>
+  The user's ID.
+</ParamField>
+
+<ParamField path="Provider" type="string" required>
+  The OAuth provider slug, e.g. `"oauth_google"`.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```go Package-level
+tokens, err := user.ListOAuthAccessTokens(context.Background(), &user.ListOAuthAccessTokensParams{
+    ID:       "user_abc123",
+    Provider: "oauth_google",
+})
+```
+
+```go Client struct
+tokens, err := c.ListOAuthAccessTokens(context.Background(), &user.ListOAuthAccessTokensParams{
+    ID:       "user_abc123",
+    Provider: "oauth_google",
+})
+```
+</CodeGroup>
+
+---
+
+## DeleteMFA
+
+Disables all multi-factor authentication methods for a user.
+
+```go
+func DeleteMFA(ctx context.Context, params *DeleteMFAParams) (*user.MultifactorAuthentication, error)
+// Client method:
+func (c *Client) DeleteMFA(ctx context.Context, params *DeleteMFAParams) (*user.MultifactorAuthentication, error)
+```
+
+### DeleteMFAParams
+
+<ParamField path="ID" type="string" required>
+  The user's ID.
+</ParamField>
+
+`user.MultifactorAuthentication` has a single field: `UserID string`.
+
+### Example
+
+<CodeGroup>
+```go Package-level
+mfa, err := user.DeleteMFA(context.Background(), &user.DeleteMFAParams{
+    ID: "user_abc123",
+})
+```
+
+```go Client struct
+mfa, err := c.DeleteMFA(context.Background(), &user.DeleteMFAParams{
+    ID: "user_abc123",
+})
+```
+</CodeGroup>
+
+---
+
+## Ban
+
+Marks the user as banned. Banned users cannot sign in.
+
+```go
+func Ban(ctx context.Context, id string) (*clerk.User, error)
+// Client method:
+func (c *Client) Ban(ctx context.Context, id string) (*clerk.User, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+u, err := user.Ban(context.Background(), "user_abc123")
+```
+
+```go Client struct
+u, err := c.Ban(context.Background(), "user_abc123")
+```
+</CodeGroup>
+
+---
+
+## Unban
+
+Removes the ban from a user.
+
+```go
+func Unban(ctx context.Context, id string) (*clerk.User, error)
+// Client method:
+func (c *Client) Unban(ctx context.Context, id string) (*clerk.User, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+u, err := user.Unban(context.Background(), "user_abc123")
+```
+
+```go Client struct
+u, err := c.Unban(context.Background(), "user_abc123")
+```
+</CodeGroup>
+
+---
+
+## Lock
+
+Marks the user as locked, preventing sign-in.
+
+```go
+func Lock(ctx context.Context, id string) (*clerk.User, error)
+// Client method:
+func (c *Client) Lock(ctx context.Context, id string) (*clerk.User, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+u, err := user.Lock(context.Background(), "user_abc123")
+```
+
+```go Client struct
+u, err := c.Lock(context.Background(), "user_abc123")
+```
+</CodeGroup>
+
+---
+
+## Unlock
+
+Removes the lock from a user.
+
+```go
+func Unlock(ctx context.Context, id string) (*clerk.User, error)
+// Client method:
+func (c *Client) Unlock(ctx context.Context, id string) (*clerk.User, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+u, err := user.Unlock(context.Background(), "user_abc123")
+```
+
+```go Client struct
+u, err := c.Unlock(context.Background(), "user_abc123")
+```
+</CodeGroup>
+
+---
+
+## ListOrganizationMemberships
+
+Lists all organization memberships for a user.
+
+```go
+func ListOrganizationMemberships(ctx context.Context, id string, params *ListOrganizationMembershipsParams) (*clerk.OrganizationMembershipList, error)
+// Client method:
+func (c *Client) ListOrganizationMemberships(ctx context.Context, id string, params *ListOrganizationMembershipsParams) (*clerk.OrganizationMembershipList, error)
+```
+
+### ListOrganizationMembershipsParams
+
+<ParamField path="Limit" type="*int64">
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="Offset" type="*int64">
+  Number of results to skip.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```go Package-level
+memberships, err := user.ListOrganizationMemberships(context.Background(), "user_abc123", &user.ListOrganizationMembershipsParams{
+    ListParams: clerk.ListParams{Limit: clerk.Int64(10)},
+})
+```
+
+```go Client struct
+memberships, err := c.ListOrganizationMemberships(context.Background(), "user_abc123", &user.ListOrganizationMembershipsParams{
+    ListParams: clerk.ListParams{Limit: clerk.Int64(10)},
+})
+```
+</CodeGroup>
+
+---
+
+## ListOrganizationInvitations
+
+Lists all organization invitations for a user.
+
+```go
+func ListOrganizationInvitations(ctx context.Context, params *ListOrganizationInvitationsParams) (*clerk.OrganizationInvitationList, error)
+// Client method:
+func (c *Client) ListOrganizationInvitations(ctx context.Context, params *ListOrganizationInvitationsParams) (*clerk.OrganizationInvitationList, error)
+```
+
+### ListOrganizationInvitationsParams
+
+<ParamField path="UserID" type="string" required>
+  The user's ID.
+</ParamField>
+
+<ParamField path="Statuses" type="*[]string">
+  Filter by invitation status. Possible values: `"pending"`, `"accepted"`, `"revoked"`.
+</ParamField>
+
+<ParamField path="Limit" type="*int64">
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="Offset" type="*int64">
+  Number of results to skip.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```go Package-level
+invitations, err := user.ListOrganizationInvitations(context.Background(), &user.ListOrganizationInvitationsParams{
+    UserID:   "user_abc123",
+    Statuses: &[]string{"pending"},
+})
+```
+
+```go Client struct
+invitations, err := c.ListOrganizationInvitations(context.Background(), &user.ListOrganizationInvitationsParams{
+    UserID:   "user_abc123",
+    Statuses: &[]string{"pending"},
+})
+```
+</CodeGroup>
+
+---
+
+## DeletePasskey
+
+Deletes a passkey by its identification ID.
+
+```go
+func DeletePasskey(ctx context.Context, userID, identificationID string) (*clerk.DeletedResource, error)
+// Client method:
+func (c *Client) DeletePasskey(ctx context.Context, userID, identificationID string) (*clerk.DeletedResource, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+deleted, err := user.DeletePasskey(context.Background(), "user_abc123", "pk_ident_xyz")
+```
+
+```go Client struct
+deleted, err := c.DeletePasskey(context.Background(), "user_abc123", "pk_ident_xyz")
+```
+</CodeGroup>
+
+---
+
+## DeleteWeb3Wallet
+
+Deletes a Web3 wallet by its identification ID.
+
+```go
+func DeleteWeb3Wallet(ctx context.Context, userID, identificationID string) (*clerk.DeletedResource, error)
+// Client method:
+func (c *Client) DeleteWeb3Wallet(ctx context.Context, userID, identificationID string) (*clerk.DeletedResource, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+deleted, err := user.DeleteWeb3Wallet(context.Background(), "user_abc123", "w3w_ident_xyz")
+```
+
+```go Client struct
+deleted, err := c.DeleteWeb3Wallet(context.Background(), "user_abc123", "w3w_ident_xyz")
+```
+</CodeGroup>
+
+---
+
+## DeleteTOTP
+
+Deletes all TOTP configurations for a user.
+
+```go
+func DeleteTOTP(ctx context.Context, userID string) (*user.MultifactorAuthentication, error)
+// Client method:
+func (c *Client) DeleteTOTP(ctx context.Context, userID string) (*user.MultifactorAuthentication, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+mfa, err := user.DeleteTOTP(context.Background(), "user_abc123")
+```
+
+```go Client struct
+mfa, err := c.DeleteTOTP(context.Background(), "user_abc123")
+```
+</CodeGroup>
+
+---
+
+## DeleteBackupCode
+
+Deletes all backup codes for a user.
+
+```go
+func DeleteBackupCode(ctx context.Context, userID string) (*user.MultifactorAuthentication, error)
+// Client method:
+func (c *Client) DeleteBackupCode(ctx context.Context, userID string) (*user.MultifactorAuthentication, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+mfa, err := user.DeleteBackupCode(context.Background(), "user_abc123")
+```
+
+```go Client struct
+mfa, err := c.DeleteBackupCode(context.Background(), "user_abc123")
+```
+</CodeGroup>
+
+---
+
+## DeleteExternalAccount
+
+Deletes an external (OAuth) account by its ID.
+
+```go
+func DeleteExternalAccount(ctx context.Context, params *DeleteExternalAccountParams) (*clerk.DeletedResource, error)
+// Client method:
+func (c *Client) DeleteExternalAccount(ctx context.Context, params *DeleteExternalAccountParams) (*clerk.DeletedResource, error)
+```
+
+### DeleteExternalAccountParams
+
+<ParamField path="UserID" type="string" required>
+  The user's ID.
+</ParamField>
+
+<ParamField path="ID" type="string" required>
+  The external account's ID.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```go Package-level
+deleted, err := user.DeleteExternalAccount(context.Background(), &user.DeleteExternalAccountParams{
+    UserID: "user_abc123",
+    ID:     "eac_xyz",
+})
+```
+
+```go Client struct
+deleted, err := c.DeleteExternalAccount(context.Background(), &user.DeleteExternalAccountParams{
+    UserID: "user_abc123",
+    ID:     "eac_xyz",
+})
+```
+</CodeGroup>
+
+---
+
+## VerifyPassword
+
+Verifies a user's password. Returns `Verified: true` on success, or an error if the password is incorrect.
+
+```go
+func VerifyPassword(ctx context.Context, params *VerifyPasswordParams) (*user.VerifyPasswordResponse, error)
+// Client method:
+func (c *Client) VerifyPassword(ctx context.Context, params *VerifyPasswordParams) (*user.VerifyPasswordResponse, error)
+```
+
+### VerifyPasswordParams
+
+<ParamField path="UserID" type="string" required>
+  The user's ID.
+</ParamField>
+
+<ParamField path="Password" type="string" required>
+  The plaintext password to verify.
+</ParamField>
+
+`user.VerifyPasswordResponse` has a single field: `Verified bool`.
+
+### Example
+
+<CodeGroup>
+```go Package-level
+resp, err := user.VerifyPassword(context.Background(), &user.VerifyPasswordParams{
+    UserID:   "user_abc123",
+    Password: "s3cur3p@ss",
+})
+if err == nil && resp.Verified {
+    // password is correct
+}
+```
+
+```go Client struct
+resp, err := c.VerifyPassword(context.Background(), &user.VerifyPasswordParams{
+    UserID:   "user_abc123",
+    Password: "s3cur3p@ss",
+})
+```
+</CodeGroup>

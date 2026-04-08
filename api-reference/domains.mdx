@@ -1,0 +1,312 @@
+---
+title: "Domains"
+description: "List, create, update, and delete domains in a multi-domain Clerk setup."
+---
+
+## Overview
+
+The `domain` package provides operations for managing domains in Clerk's multi-domain architecture. Satellite domains extend your primary application domain, enabling multi-tenant or multi-region deployments.
+
+**Import path:** `github.com/clerk/clerk-sdk-go/v2/domain`
+
+<Note>
+  Domain management is relevant for multi-domain setups where your application spans more than one origin. For single-domain applications, this API is not required.
+</Note>
+
+---
+
+## Operations
+
+### List
+
+Returns all domains configured for the instance.
+
+```
+func List(ctx context.Context, params *ListParams) (*clerk.DomainList, error)
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.DomainList, error)
+```
+
+#### ListParams
+
+`ListParams` currently carries no additional fields beyond the embedded `clerk.APIParams`.
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/domain"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    list, err := domain.List(context.Background(), &domain.ListParams{})
+    if err != nil {
+        // handle error
+    }
+    for _, d := range list.Domains {
+        _ = d.Name
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/domain"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := domain.NewClient(config)
+
+    list, err := client.List(context.Background(), &domain.ListParams{})
+    if err != nil {
+        // handle error
+    }
+    for _, d := range list.Domains {
+        _ = d.Name
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Create
+
+Creates a new satellite domain.
+
+```
+func Create(ctx context.Context, params *CreateParams) (*clerk.Domain, error)
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.Domain, error)
+```
+
+#### CreateParams
+
+<ParamField path="Name" type="*string">
+  The domain name (e.g. `"satellite.example.com"`).
+</ParamField>
+
+<ParamField path="ProxyURL" type="*string">
+  The proxy URL to use for this domain. Required when `IsSatellite` is `true` and you are not using CNAME records.
+</ParamField>
+
+<ParamField path="IsSatellite" type="*bool">
+  Whether this domain is a satellite domain. Set to `true` for secondary domains.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/domain"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    isSatellite := true
+
+    d, err := domain.Create(context.Background(), &domain.CreateParams{
+        Name:        clerk.String("satellite.example.com"),
+        IsSatellite: &isSatellite,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/domain"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := domain.NewClient(config)
+
+    isSatellite := true
+
+    d, err := client.Create(context.Background(), &domain.CreateParams{
+        Name:        clerk.String("satellite.example.com"),
+        IsSatellite: &isSatellite,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Update
+
+Updates properties of an existing domain specified by ID.
+
+```
+func Update(ctx context.Context, id string, params *UpdateParams) (*clerk.Domain, error)
+func (c *Client) Update(ctx context.Context, id string, params *UpdateParams) (*clerk.Domain, error)
+```
+
+#### UpdateParams
+
+<ParamField path="Name" type="*string">
+  A new name for the domain.
+</ParamField>
+
+<ParamField path="ProxyURL" type="*string">
+  A new proxy URL for the domain.
+</ParamField>
+
+<ParamField path="IsSecondary" type="*bool">
+  Update whether this domain acts as a secondary domain.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/domain"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    d, err := domain.Update(context.Background(), "dmn_2abc123", &domain.UpdateParams{
+        Name: clerk.String("renamed.example.com"),
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/domain"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := domain.NewClient(config)
+
+    d, err := client.Update(context.Background(), "dmn_2abc123", &domain.UpdateParams{
+        Name: clerk.String("renamed.example.com"),
+    })
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Delete
+
+Removes a domain by ID.
+
+```
+func Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+func (c *Client) Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/domain"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    deleted, err := domain.Delete(context.Background(), "dmn_2abc123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/domain"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := domain.NewClient(config)
+
+    deleted, err := client.Delete(context.Background(), "dmn_2abc123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Types
+
+### Domain
+
+<ResponseField name="id" type="string">
+  The unique identifier for this domain.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  The object type. Always `"domain"`.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The domain name string (e.g. `"satellite.example.com"`).
+</ResponseField>
+
+<ResponseField name="is_satellite" type="bool">
+  Whether this domain is a satellite (secondary) domain.
+</ResponseField>
+
+<ResponseField name="frontend_api_url" type="string">
+  The Clerk Frontend API URL associated with this domain.
+</ResponseField>
+
+<ResponseField name="accounts_portal_url" type="*string">
+  The URL of the accounts portal for this domain, if configured.
+</ResponseField>
+
+<ResponseField name="proxy_url" type="*string">
+  The proxy URL configured for this domain, if any.
+</ResponseField>
+
+<ResponseField name="cname_targets" type="[]CNAMETarget">
+  The list of CNAME records that must be configured for this domain.
+</ResponseField>
+
+<ResponseField name="development_origin" type="string">
+  The development origin associated with this domain.
+</ResponseField>
+
+### CNAMETarget
+
+<ResponseField name="host" type="string">
+  The CNAME record host (subdomain) to create.
+</ResponseField>
+
+<ResponseField name="value" type="string">
+  The value the CNAME record should point to.
+</ResponseField>
+
+### DomainList
+
+<ResponseField name="data" type="[]*Domain">
+  The list of domain objects.
+</ResponseField>
+
+<ResponseField name="total_count" type="int64">
+  The total number of domains across all pages.
+</ResponseField>

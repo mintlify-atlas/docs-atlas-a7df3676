@@ -1,0 +1,281 @@
+---
+title: "Instance settings"
+description: "Update your Clerk instance's configuration, access restrictions, and organization settings."
+---
+
+The `instancesettings` package lets you update the runtime configuration of your Clerk instance programmatically. This includes general settings (test mode, HIBP checks, email delivery), access restrictions (allowlists, blocklists, disposable email blocking), and organization-level settings.
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/instancesettings"
+```
+
+---
+
+## Operations
+
+### `Update`
+
+Updates the general settings of the instance. Returns only an error — there is
+no response body on success.
+
+```go
+func Update(ctx context.Context, params *UpdateParams) error
+```
+
+#### Parameters
+
+<ParamField path="test_mode" type="*bool">
+  Enable or disable test mode. Defaults to `true` for development instances.
+</ParamField>
+
+<ParamField path="hibp" type="*bool">
+  When `true`, Clerk checks passwords against the "Have I Been Pwned" database.
+  Enabled by default on all instances.
+</ParamField>
+
+<ParamField path="enhanced_email_deliverability" type="*bool">
+  When `true` on a production instance, OTP verification emails are sent from
+  Clerk's shared domain via Postmark for improved deliverability.
+</ParamField>
+
+<ParamField path="support_email" type="*string">
+  Contact email displayed on Clerk-hosted pages. Pass an empty string to remove
+  the currently configured address.
+</ParamField>
+
+<ParamField path="clerk_js_version" type="*string">
+  Pin a specific Clerk JS version on hosted Account pages. Pass an empty string
+  to remove the pin and revert to automatic resolution.
+</ParamField>
+
+<ParamField path="url_based_session_syncing" type="*bool">
+  Enable URL-based session syncing to avoid third-party cookie restrictions in
+  development. Requires a matching setting in Clerk.js.
+</ParamField>
+
+<ParamField path="development_origin" type="*string">
+  The origin URL used in development to enable custom redirects and cookie-free
+  session syncing.
+</ParamField>
+
+<ParamField path="cookieless_dev" type="*bool">
+  Deprecated. Use `url_based_session_syncing` instead.
+</ParamField>
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client (global backend)">
+    ```go
+    clerk.SetKey("sk_live_...")
+
+    err := instancesettings.Update(context.Background(), &instancesettings.UpdateParams{
+        HIBP:         clerk.Bool(true),
+        SupportEmail: clerk.String("support@example.com"),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+
+    client := instancesettings.NewClient(config)
+
+    err := client.Update(context.Background(), &instancesettings.UpdateParams{
+        HIBP:         clerk.Bool(true),
+        SupportEmail: clerk.String("support@example.com"),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### `UpdateRestrictions`
+
+Updates who is allowed or blocked from signing up for your instance.
+
+```go
+func UpdateRestrictions(ctx context.Context, params *UpdateRestrictionsParams) (*clerk.InstanceRestrictions, error)
+```
+
+#### Parameters
+
+<ParamField path="allowlist" type="*bool">
+  When `true`, only identifiers on the allowlist can sign up.
+</ParamField>
+
+<ParamField path="blocklist" type="*bool">
+  When `true`, identifiers on the blocklist are denied sign-up.
+</ParamField>
+
+<ParamField path="block_email_subaddresses" type="*bool">
+  When `true`, email addresses that use the `+` subaddressing trick
+  (e.g. `user+tag@example.com`) are rejected.
+</ParamField>
+
+<ParamField path="block_disposable_email_domains" type="*bool">
+  When `true`, sign-ups from known disposable email providers are blocked.
+</ParamField>
+
+<ParamField path="ignore_dots_for_gmail_addresses" type="*bool">
+  When `true`, dots in the local part of Gmail addresses are ignored
+  (e.g. `j.ohn@gmail.com` is treated identically to `john@gmail.com`).
+</ParamField>
+
+#### Example
+
+```go
+restrictions, err := instancesettings.UpdateRestrictions(ctx, &instancesettings.UpdateRestrictionsParams{
+    Blocklist:                   clerk.Bool(true),
+    BlockDisposableEmailDomains: clerk.Bool(true),
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println("blocklist enabled:", restrictions.Blocklist)
+```
+
+---
+
+### `UpdateOrganizationSettings`
+
+Updates organization-level defaults for the instance.
+
+```go
+func UpdateOrganizationSettings(ctx context.Context, params *UpdateOrganizationSettingsParams) (*clerk.OrganizationSettings, error)
+```
+
+#### Parameters
+
+<ParamField path="enabled" type="*bool">
+  Enable or disable the organizations feature for this instance.
+</ParamField>
+
+<ParamField path="max_allowed_memberships" type="*int64">
+  Maximum number of members allowed per organization.
+</ParamField>
+
+<ParamField path="creator_role_id" type="*string">
+  The role ID assigned to the user who creates an organization.
+</ParamField>
+
+<ParamField path="admin_delete_enabled" type="*bool">
+  When `true`, organization admins can delete their own organization.
+</ParamField>
+
+<ParamField path="domains_enabled" type="*bool">
+  Allow organizations to be associated with email domains.
+</ParamField>
+
+<ParamField path="domains_enrollment_modes" type="*[]string">
+  The enrollment modes available when a user's email matches an organization
+  domain (e.g. `["automatic_invitation", "automatic_suggestion"]`).
+</ParamField>
+
+<ParamField path="domains_default_role_id" type="*string">
+  Default role ID assigned to users who join via a domain match.
+</ParamField>
+
+#### Example
+
+```go
+settings, err := instancesettings.UpdateOrganizationSettings(ctx, &instancesettings.UpdateOrganizationSettingsParams{
+    Enabled:               clerk.Bool(true),
+    MaxAllowedMemberships: clerk.Int64(100),
+    AdminDeleteEnabled:    clerk.Bool(false),
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println("max memberships:", settings.MaxAllowedMemberships)
+```
+
+---
+
+## Types
+
+### `clerk.InstanceRestrictions`
+
+Returned by `UpdateRestrictions`.
+
+<ResponseField name="object" type="string">
+  Always `"instance_restrictions"`.
+</ResponseField>
+
+<ResponseField name="allowlist" type="bool">
+  Whether the allowlist is currently active.
+</ResponseField>
+
+<ResponseField name="blocklist" type="bool">
+  Whether the blocklist is currently active.
+</ResponseField>
+
+<ResponseField name="block_email_subaddresses" type="bool">
+  Whether `+` subaddress blocking is enabled.
+</ResponseField>
+
+<ResponseField name="block_disposable_email_domains" type="bool">
+  Whether disposable email domain blocking is enabled.
+</ResponseField>
+
+<ResponseField name="ignore_dots_for_gmail_addresses" type="bool">
+  Whether Gmail dot normalization is active.
+</ResponseField>
+
+---
+
+### `clerk.OrganizationSettings`
+
+Returned by `UpdateOrganizationSettings`.
+
+<ResponseField name="object" type="string">
+  Always `"organization_settings"`.
+</ResponseField>
+
+<ResponseField name="enabled" type="bool">
+  Whether the organizations feature is enabled.
+</ResponseField>
+
+<ResponseField name="max_allowed_memberships" type="int64">
+  Maximum members per organization.
+</ResponseField>
+
+<ResponseField name="max_allowed_roles" type="int64">
+  Maximum custom roles per organization.
+</ResponseField>
+
+<ResponseField name="max_allowed_permissions" type="int64">
+  Maximum custom permissions per organization.
+</ResponseField>
+
+<ResponseField name="creator_role" type="string">
+  Slug of the role assigned to organization creators.
+</ResponseField>
+
+<ResponseField name="admin_delete_enabled" type="bool">
+  Whether admins can delete their own organization.
+</ResponseField>
+
+<ResponseField name="domains_enabled" type="bool">
+  Whether domain-based enrollment is active.
+</ResponseField>
+
+<ResponseField name="domains_enrollment_modes" type="[]string">
+  The active domain enrollment modes.
+</ResponseField>
+
+<ResponseField name="domains_default_role" type="string">
+  Slug of the default role for domain-matched users.
+</ResponseField>

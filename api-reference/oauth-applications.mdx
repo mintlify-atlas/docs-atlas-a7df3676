@@ -1,0 +1,327 @@
+---
+title: "OAuth Applications"
+description: "Create, retrieve, update, delete, and rotate secrets for OAuth applications in your Clerk instance."
+---
+
+The `oauthapplication` package provides operations for managing OAuth 2.0 applications registered with your Clerk instance. These are applications that can request access to Clerk user data via the OAuth 2.0 authorization code flow.
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/oauthapplication"
+```
+
+---
+
+## Operations
+
+### `Get`
+
+Fetches a single OAuth application by its ID.
+
+```go
+func Get(ctx context.Context, id string) (*clerk.OAuthApplication, error)
+func (c *Client) Get(ctx context.Context, id string) (*clerk.OAuthApplication, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    clerk.SetKey("sk_live_...")
+
+    app, err := oauthapplication.Get(context.Background(), "oauth_app_abc123")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(app.Name)
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := oauthapplication.NewClient(config)
+
+    app, err := client.Get(context.Background(), "oauth_app_abc123")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(app.Name)
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### `List`
+
+Retrieves all OAuth applications for your instance.
+
+```go
+func List(ctx context.Context, params *ListParams) (*clerk.OAuthApplicationList, error)
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.OAuthApplicationList, error)
+```
+
+#### ListParams
+
+<ParamField path="Limit" type="*int64">
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="Offset" type="*int64">
+  Number of results to skip.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    list, err := oauthapplication.List(context.Background(), &oauthapplication.ListParams{
+        ListParams: clerk.ListParams{Limit: clerk.Int64(10)},
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, app := range list.OAuthApplications {
+        fmt.Println(app.ID, app.Name)
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    list, err := client.List(context.Background(), &oauthapplication.ListParams{})
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Total: %d\n", list.TotalCount)
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### `Create`
+
+Creates a new OAuth application.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.OAuthApplication, error)
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.OAuthApplication, error)
+```
+
+#### CreateParams
+
+<ParamField path="Name" type="string" required>
+  The display name of the OAuth application.
+</ParamField>
+
+<ParamField path="CallbackURL" type="string" required>
+  The redirect URI to send users to after authorization. Must be a valid URL.
+</ParamField>
+
+<ParamField path="Scopes" type="string" required>
+  Space-separated list of OAuth scopes the application can request (e.g. `"profile email"`).
+</ParamField>
+
+<ParamField path="Public" type="bool">
+  Whether this is a public client (e.g. a SPA or mobile app that cannot keep a secret). Public clients do not have a client secret.
+</ParamField>
+
+<ParamField path="ConsentScreenEnabled" type="*bool">
+  When `true`, users are shown a consent screen before authorization. Defaults to `false`.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    app, err := oauthapplication.Create(context.Background(), &oauthapplication.CreateParams{
+        Name:        "My App",
+        CallbackURL: "https://myapp.com/callback",
+        Scopes:      "profile email",
+        Public:      false,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println("Client ID:", app.ClientID)
+    fmt.Println("Client Secret:", *app.ClientSecret) // only on creation
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    app, err := client.Create(context.Background(), &oauthapplication.CreateParams{
+        Name:                 "My App",
+        CallbackURL:          "https://myapp.com/callback",
+        Scopes:               "profile email",
+        Public:               true,
+        ConsentScreenEnabled: clerk.Bool(true),
+    })
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  The `ClientSecret` field is only present in the response immediately after creation. Store it securely — it cannot be retrieved again. Use `RotateClientSecret` to generate a new one.
+</Note>
+
+---
+
+### `Update`
+
+Updates an existing OAuth application.
+
+```go
+func Update(ctx context.Context, id string, params *UpdateParams) (*clerk.OAuthApplication, error)
+func (c *Client) Update(ctx context.Context, id string, params *UpdateParams) (*clerk.OAuthApplication, error)
+```
+
+#### UpdateParams
+
+<ParamField path="Name" type="*string">
+  New display name.
+</ParamField>
+
+<ParamField path="CallbackURL" type="*string">
+  New redirect URI.
+</ParamField>
+
+<ParamField path="Scopes" type="*string">
+  New space-separated scope list.
+</ParamField>
+
+<ParamField path="ConsentScreenEnabled" type="*bool">
+  Enable or disable the consent screen.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    app, err := oauthapplication.Update(context.Background(), "oauth_app_abc123", &oauthapplication.UpdateParams{
+        Name:        clerk.String("Updated App Name"),
+        CallbackURL: clerk.String("https://myapp.com/oauth/callback"),
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    app, err := client.Update(context.Background(), "oauth_app_abc123", &oauthapplication.UpdateParams{
+        Scopes: clerk.String("profile email openid"),
+    })
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### `DeleteOAuthApplication`
+
+Deletes an OAuth application.
+
+```go
+func DeleteOAuthApplication(ctx context.Context, id string) (*clerk.DeletedResource, error)
+func (c *Client) DeleteOAuthApplication(ctx context.Context, id string) (*clerk.DeletedResource, error)
+```
+
+```go
+deleted, err := oauthapplication.DeleteOAuthApplication(context.Background(), "oauth_app_abc123")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("Deleted:", deleted.Deleted)
+```
+
+---
+
+### `RotateClientSecret`
+
+Rotates the client secret for an OAuth application. The old secret is immediately invalidated. Returns the application with the new `ClientSecret` set.
+
+```go
+func RotateClientSecret(ctx context.Context, id string) (*clerk.OAuthApplication, error)
+func (c *Client) RotateClientSecret(ctx context.Context, id string) (*clerk.OAuthApplication, error)
+```
+
+```go
+app, err := oauthapplication.RotateClientSecret(context.Background(), "oauth_app_abc123")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("New secret:", *app.ClientSecret)
+```
+
+<Warning>
+  Rotating the client secret immediately invalidates the previous secret. Any existing integrations using the old secret will break until updated.
+</Warning>
+
+---
+
+## Types
+
+### `clerk.OAuthApplication`
+
+<ResponseField name="object" type="string">
+  Always `"oauth_application"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Unique identifier for the OAuth application.
+</ResponseField>
+
+<ResponseField name="instance_id" type="string">
+  The Clerk instance this application belongs to.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Display name of the application.
+</ResponseField>
+
+<ResponseField name="client_id" type="string">
+  The OAuth client ID. Share this with third parties.
+</ResponseField>
+
+<ResponseField name="public" type="bool">
+  Whether this is a public client (no client secret).
+</ResponseField>
+
+<ResponseField name="dynamically_registered" type="bool">
+  Whether the application was registered via dynamic client registration.
+</ResponseField>
+
+<ResponseField name="consent_screen_enabled" type="bool">
+  Whether the consent screen is shown during authorization.
+</ResponseField>
+
+<ResponseField name="scopes" type="string">
+  Space-separated list of allowed OAuth scopes.
+</ResponseField>
+
+<ResponseField name="callback_url" type="string">
+  The configured redirect URI.
+</ResponseField>
+
+<ResponseField name="discovery_url" type="string">
+  The OpenID Connect discovery endpoint URL.
+</ResponseField>
+
+<ResponseField name="authorize_url" type="string">
+  The authorization endpoint URL.
+</ResponseField>
+
+<ResponseField name="token_fetch_url" type="string">
+  The token endpoint URL.
+</ResponseField>
+
+<ResponseField name="user_info_url" type="string">
+  The userinfo endpoint URL.
+</ResponseField>
+
+<ResponseField name="client_secret" type="*string">
+  The client secret. Only present immediately after creation or after `RotateClientSecret`.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) when the application was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) when the application was last updated.
+</ResponseField>

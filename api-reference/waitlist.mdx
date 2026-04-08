@@ -1,0 +1,282 @@
+---
+title: "Waitlist entries"
+description: "Manage the waitlist for your Clerk instance."
+---
+
+When your application is in waitlist mode, users who try to sign up are added to a waitlist instead of being registered immediately. The `waitlistentry` package lets you list, create, and bulk-create waitlist entries from your backend — useful for seeding the waitlist, building an admin dashboard, or automating invitation workflows.
+
+<Note>
+  Waitlist mode is enabled in the Clerk Dashboard under **User & Authentication → Restrictions**.
+  Once enabled, users cannot sign up without first being on the waitlist.
+</Note>
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/waitlistentry"
+```
+
+---
+
+## Operations
+
+### `List`
+
+Returns a paginated list of waitlist entries, optionally filtered by status or a
+search query.
+
+```go
+func List(ctx context.Context, params *ListParams) (*clerk.WaitlistEntriesList, error)
+```
+
+#### Parameters
+
+<ParamField path="limit" type="int64">
+  Maximum number of entries to return. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="offset" type="int64">
+  Number of entries to skip before returning results. Inherited from
+  `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="order_by" type="*string">
+  Field to sort by. Prefix with `-` for descending order
+  (e.g. `"-created_at"`).
+</ParamField>
+
+<ParamField path="query" type="*string">
+  Free-text search query matched against the email address.
+</ParamField>
+
+<ParamField path="status" type="[]string">
+  Filter by one or more statuses. Valid values: `"pending"`, `"invited"`.
+  Multiple values are sent as repeated query parameters.
+</ParamField>
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client (global backend)">
+    ```go
+    clerk.SetKey("sk_live_...")
+
+    pending := "pending"
+    list, err := waitlistentry.List(context.Background(), &waitlistentry.ListParams{
+        Statuses: []string{pending},
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("%d pending entries (total: %d)\n", len(list.WaitlistEntries), list.TotalCount)
+    for _, e := range list.WaitlistEntries {
+        fmt.Printf("  %s — %s\n", e.EmailAddress, e.Status)
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+
+    client := waitlistentry.NewClient(config)
+
+    list, err := client.List(context.Background(), &waitlistentry.ListParams{
+        Statuses: []string{"pending"},
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    for _, e := range list.WaitlistEntries {
+        fmt.Println(e.EmailAddress, e.Status)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### `Create`
+
+Adds a single email address to the waitlist.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.WaitlistEntry, error)
+```
+
+#### Parameters
+
+<ParamField path="email_address" type="string" required>
+  The email address to add to the waitlist.
+</ParamField>
+
+<ParamField path="notify" type="*bool">
+  When `true`, Clerk sends an invitation email to the address immediately after
+  adding the entry. Defaults to `false`.
+</ParamField>
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client (global backend)">
+    ```go
+    clerk.SetKey("sk_live_...")
+
+    entry, err := waitlistentry.Create(context.Background(), &waitlistentry.CreateParams{
+        EmailAddress: "jane@example.com",
+        Notify:       clerk.Bool(true),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("created entry %s — status: %s\n", entry.ID, entry.Status)
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+
+    client := waitlistentry.NewClient(config)
+
+    entry, err := client.Create(context.Background(), &waitlistentry.CreateParams{
+        EmailAddress: "jane@example.com",
+        Notify:       clerk.Bool(true),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("created entry %s — status: %s\n", entry.ID, entry.Status)
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### `BulkCreate`
+
+Adds multiple email addresses to the waitlist in a single request.
+
+```go
+func BulkCreate(ctx context.Context, params *BulkCreateParams) (*clerk.WaitlistEntries, error)
+```
+
+#### Parameters
+
+<ParamField path="WaitlistEntries" type="[]*CreateParams" required>
+  A slice of `CreateParams` — each element has an `email_address` and an
+  optional `notify` flag.
+</ParamField>
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client (global backend)">
+    ```go
+    clerk.SetKey("sk_live_...")
+
+    entries, err := waitlistentry.BulkCreate(context.Background(), &waitlistentry.BulkCreateParams{
+        WaitlistEntries: []*waitlistentry.CreateParams{
+            {EmailAddress: "alice@example.com"},
+            {EmailAddress: "bob@example.com", Notify: clerk.Bool(true)},
+            {EmailAddress: "carol@example.com"},
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("created %d entries\n", len(entries.WaitlistEntries))
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+
+    client := waitlistentry.NewClient(config)
+
+    entries, err := client.BulkCreate(context.Background(), &waitlistentry.BulkCreateParams{
+        WaitlistEntries: []*waitlistentry.CreateParams{
+            {EmailAddress: "alice@example.com"},
+            {EmailAddress: "bob@example.com"},
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("created %d entries\n", len(entries.WaitlistEntries))
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Types
+
+### `clerk.WaitlistEntry`
+
+Represents a single entry in the waitlist.
+
+<ResponseField name="object" type="string">
+  Always `"waitlist_entry"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Unique identifier for the waitlist entry.
+</ResponseField>
+
+<ResponseField name="email_address" type="string">
+  The email address associated with this entry.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current state of the entry: `"pending"` (not yet invited) or `"invited"`
+  (an invitation email has been sent).
+</ResponseField>
+
+<ResponseField name="is_locked" type="bool">
+  When `true`, the entry cannot be modified or re-invited.
+</ResponseField>
+
+<ResponseField name="invitation" type="*clerk.Invitation">
+  The invitation associated with this entry, if one has been sent. `nil` while
+  the status is `"pending"`.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) when the entry was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) of the last update.
+</ResponseField>
+
+---
+
+### `clerk.WaitlistEntriesList`
+
+Returned by `List`.
+
+<ResponseField name="data" type="[]*clerk.WaitlistEntry">
+  The page of waitlist entries.
+</ResponseField>
+
+<ResponseField name="total_count" type="int64">
+  Total number of entries matching the query (across all pages).
+</ResponseField>
+
+---
+
+### `clerk.WaitlistEntries`
+
+Returned by `BulkCreate`.
+
+<ResponseField name="data" type="[]*clerk.WaitlistEntry">
+  The waitlist entries that were created.
+</ResponseField>

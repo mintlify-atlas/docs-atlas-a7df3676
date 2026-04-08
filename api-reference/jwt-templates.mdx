@@ -1,0 +1,213 @@
+---
+title: "JWT Templates"
+description: "Create, retrieve, update, delete, and list JWT templates for customizing session token claims."
+---
+
+JWT templates let you customize the claims included in Clerk's session tokens. Use them to add custom data, integrate with third-party services that require specific JWT shapes, or issue tokens with reduced lifetimes.
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/jwttemplate"
+```
+
+---
+
+## Operations
+
+### `Create`
+
+Creates a new JWT template.
+
+```go
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.JWTTemplate, error)
+```
+
+#### CreateParams
+
+<ParamField path="Name" type="*string">
+  The name of the template. Used to reference it when creating session tokens.
+</ParamField>
+
+<ParamField path="Claims" type="json.RawMessage">
+  A JSON object defining the custom claims to include in tokens using this template. Supports Clerk's template interpolation syntax.
+</ParamField>
+
+<ParamField path="Lifetime" type="*int64">
+  Token lifetime in seconds. Defaults to the instance setting.
+</ParamField>
+
+<ParamField path="AllowedClockSkew" type="*int64">
+  Allowed clock skew in seconds when validating the token.
+</ParamField>
+
+<ParamField path="CustomSigningKey" type="*bool">
+  When `true`, the template uses a custom signing key instead of Clerk's default key.
+</ParamField>
+
+<ParamField path="SigningKey" type="*string">
+  The custom private signing key (PEM format). Only used when `CustomSigningKey` is `true`.
+</ParamField>
+
+<ParamField path="SigningAlgorithm" type="*string">
+  The signing algorithm. Common values: `"RS256"`, `"ES256"`. Defaults to `"RS256"`.
+</ParamField>
+
+```go
+clerk.SetKey("sk_live_...")
+
+template, err := jwttemplate.NewClient(&clerk.ClientConfig{}).Create(context.Background(), &jwttemplate.CreateParams{
+    Name:     clerk.String("hasura"),
+    Claims:   json.RawMessage(`{"https://hasura.io/jwt/claims": {"x-hasura-user-id": "{{user.id}}"}}`),
+    Lifetime: clerk.Int64(300),
+})
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("Template ID:", template.ID)
+```
+
+---
+
+### `Get`
+
+Returns details about a JWT template.
+
+```go
+func (c *Client) Get(ctx context.Context, id string) (*clerk.JWTTemplate, error)
+```
+
+```go
+template, err := jwttemplate.NewClient(&clerk.ClientConfig{}).Get(context.Background(), "jtmpl_abc123")
+```
+
+---
+
+### `Update`
+
+Updates an existing JWT template. Accepts the same fields as `Create`.
+
+```go
+func (c *Client) Update(ctx context.Context, id string, params *UpdateParams) (*clerk.JWTTemplate, error)
+```
+
+#### UpdateParams
+
+<ParamField path="Name" type="*string">
+  New template name.
+</ParamField>
+
+<ParamField path="Claims" type="json.RawMessage">
+  New claims JSON object.
+</ParamField>
+
+<ParamField path="Lifetime" type="*int64">
+  New token lifetime in seconds.
+</ParamField>
+
+<ParamField path="AllowedClockSkew" type="*int64">
+  New allowed clock skew in seconds.
+</ParamField>
+
+<ParamField path="CustomSigningKey" type="*bool">
+  Enable or disable custom signing key.
+</ParamField>
+
+<ParamField path="SigningKey" type="*string">
+  New custom signing key.
+</ParamField>
+
+<ParamField path="SigningAlgorithm" type="*string">
+  New signing algorithm.
+</ParamField>
+
+```go
+client := jwttemplate.NewClient(&clerk.ClientConfig{})
+template, err := client.Update(context.Background(), "jtmpl_abc123", &jwttemplate.UpdateParams{
+    Lifetime: clerk.Int64(600),
+})
+```
+
+---
+
+### `Delete`
+
+Deletes a JWT template.
+
+```go
+func (c *Client) Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+```
+
+```go
+deleted, err := jwttemplate.NewClient(&clerk.ClientConfig{}).Delete(context.Background(), "jtmpl_abc123")
+```
+
+---
+
+### `List`
+
+Returns a list of JWT templates.
+
+```go
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.JWTTemplateList, error)
+```
+
+```go
+list, err := jwttemplate.NewClient(&clerk.ClientConfig{}).List(context.Background(), &jwttemplate.ListParams{})
+if err != nil {
+    log.Fatal(err)
+}
+for _, t := range list.JWTTemplates {
+    fmt.Println(t.Name, t.Lifetime)
+}
+```
+
+<Note>
+  The `jwttemplate` package does not expose package-level functions (it is not code-generated). Instantiate a `Client` with `jwttemplate.NewClient(&clerk.ClientConfig{})`.
+</Note>
+
+---
+
+## Types
+
+### `clerk.JWTTemplate`
+
+<ResponseField name="object" type="string">
+  Always `"jwt_template"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Unique identifier for the template.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The template name. Use this when calling `session.CreateToken`.
+</ResponseField>
+
+<ResponseField name="claims" type="json.RawMessage">
+  The claims JSON object defined for this template.
+</ResponseField>
+
+<ResponseField name="lifetime" type="int64">
+  Token lifetime in seconds.
+</ResponseField>
+
+<ResponseField name="allowed_clock_skew" type="int64">
+  Allowed clock skew in seconds.
+</ResponseField>
+
+<ResponseField name="custom_signing_key" type="bool">
+  Whether a custom signing key is used.
+</ResponseField>
+
+<ResponseField name="signing_algorithm" type="string">
+  The signing algorithm (e.g. `"RS256"`).
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) when the template was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) when the template was last updated.
+</ResponseField>

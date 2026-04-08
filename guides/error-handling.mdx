@@ -1,0 +1,156 @@
+---
+title: "Error handling"
+description: "Understand and handle errors returned by the Clerk Go SDK."
+---
+
+The Clerk Go SDK returns Go errors from every API operation. When the Clerk Backend API responds with a non-2xx status code and a structured error body, the SDK wraps the response in a `*clerk.APIErrorResponse`. Other failures (network errors, JSON decode errors, unexpected server responses) are returned as plain `error` values.
+
+---
+
+## APIErrorResponse
+
+`APIErrorResponse` implements the `error` interface and is returned when the Clerk API responds with a 4xx or 5xx status and a parseable error body.
+
+```go
+type APIErrorResponse struct {
+    Errors         []Error
+    HTTPStatusCode int
+    TraceID        string
+    // Embeds APIResource, giving access to Response *APIResponse.
+}
+```
+
+<ParamField body="Errors" type="[]clerk.Error">
+  A slice of one or more errors returned by the API.
+</ParamField>
+
+<ParamField body="HTTPStatusCode" type="int">
+  The HTTP status code of the response (e.g. `400`, `401`, `404`, `422`).
+</ParamField>
+
+<ParamField body="TraceID" type="string">
+  A unique identifier for the request. Include this value when opening a support ticket with Clerk.
+</ParamField>
+
+---
+
+## Error struct
+
+Each element in `APIErrorResponse.Errors` is a `clerk.Error`:
+
+```go
+type Error struct {
+    Code        string
+    Message     string
+    LongMessage string
+    Meta        json.RawMessage
+}
+```
+
+<ParamField body="Code" type="string">
+  A machine-readable error code, e.g. `"form_identifier_not_found"`.
+</ParamField>
+
+<ParamField body="Message" type="string">
+  A short human-readable description of the error.
+</ParamField>
+
+<ParamField body="LongMessage" type="string">
+  A longer, more detailed description of the error.
+</ParamField>
+
+<ParamField body="Meta" type="json.RawMessage">
+  Optional additional structured data about the error. The shape varies by error code.
+</ParamField>
+
+---
+
+## Type-asserting API errors
+
+Use a type assertion to distinguish Clerk API errors from other error kinds:
+
+```go
+_, err := user.List(context.Background(), &user.ListParams{})
+if err != nil {
+    if apiErr, ok := err.(*clerk.APIErrorResponse); ok {
+        // Structured Clerk API error.
+        fmt.Println(apiErr.HTTPStatusCode) // e.g. 422
+        fmt.Println(apiErr.TraceID)        // for debugging
+        for _, e := range apiErr.Errors {
+            fmt.Println(e.Code, e.Message)
+        }
+    } else {
+        // Network error, JSON decode error, etc.
+        fmt.Println(err)
+    }
+}
+```
+
+---
+
+## APIResponse.Success and TraceID
+
+Every successful API resource embeds an `APIResource` which holds a pointer to the raw `*APIResponse`. You can inspect it even on success — for example to log the trace ID or to inspect raw response bytes.
+
+```go
+dmn, err := domain.Create(context.Background(), &domain.CreateParams{
+    Name:        clerk.String("clerk.com"),
+    IsSatellite: clerk.Bool(false),
+})
+if err != nil {
+    return err
+}
+
+// Success() returns true for HTTP 2xx–3xx status codes.
+if dmn.Response.Success() {
+    fmt.Println("trace:", dmn.Response.TraceID)
+}
+```
+
+`APIResponse` fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `Header` | `http.Header` | Full HTTP response headers |
+| `Status` | `string` | Status text, e.g. `"200 OK"` |
+| `StatusCode` | `int` | HTTP status code |
+| `TraceID` | `string` | `Clerk-Trace-Id` header value |
+| `RawJSON` | `json.RawMessage` | Raw response body bytes |
+
+---
+
+## Accessing the raw response on error
+
+`APIErrorResponse` embeds `APIResource`, so you can also access the raw API response when an error occurs. This is useful for logging the exact response body returned by the server.
+
+```go
+_, err := user.List(context.Background(), &user.ListParams{})
+if apiErr, ok := err.(*clerk.APIErrorResponse); ok {
+    // The structured errors from the API body.
+    fmt.Println(apiErr.Error())
+    // The raw JSON response body.
+    fmt.Println(string(apiErr.Response.RawJSON))
+    // The HTTP trace ID.
+    fmt.Println(apiErr.TraceID)
+}
+```
+
+<Tip>
+  `APIErrorResponse.Error()` returns the full JSON-marshalled representation of the error response. Log it at `DEBUG` level and surface only `Message` or `Code` to end users.
+</Tip>
+
+---
+
+## Non-API errors
+
+If the server responds with a non-2xx status but the body cannot be parsed as a Clerk error JSON, the SDK returns a plain `errors.New` wrapping the raw response body as a string. Always check whether the error is an `*APIErrorResponse` before falling through to generic error handling.
+
+```go
+if apiErr, ok := err.(*clerk.APIErrorResponse); ok {
+    // Handle structured Clerk error.
+    _ = apiErr
+} else if err != nil {
+    // Handle network errors, unexpected responses, etc.
+    log.Printf("unexpected error: %v", err)
+}
+```

@@ -1,0 +1,108 @@
+---
+title: "Testing Tokens"
+description: "Create short-lived testing tokens for use in automated test environments."
+---
+
+The `testingtoken` package provides a single operation for creating testing tokens. Testing tokens allow automated tests to bypass bot-detection mechanisms such as CAPTCHAs in Clerk's sign-in and sign-up flows.
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/testingtoken"
+```
+
+<Warning>
+  Testing tokens are **only valid in development instances**. They cannot be used in production. Never use testing tokens outside of automated test environments.
+</Warning>
+
+---
+
+## Operations
+
+### `Create`
+
+Creates a new testing token. The token is short-lived and should be used immediately.
+
+```go
+func Create(ctx context.Context) (*clerk.TestingToken, error)
+func (c *Client) Create(ctx context.Context) (*clerk.TestingToken, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    clerk.SetKey("sk_test_...")
+
+    token, err := testingtoken.Create(context.Background())
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Use token.Token as the __clerk_testing_token query parameter
+    // or the Clerk-Testing-Token header in your test requests
+    fmt.Println("Testing token:", token.Token)
+    fmt.Println("Expires at:", token.ExpiresAt)
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_test_...")
+    client := testingtoken.NewClient(config)
+
+    token, err := client.Create(context.Background())
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(token.Token)
+    ```
+  </Tab>
+</Tabs>
+
+### Usage in tests
+
+Pass the testing token in your test HTTP requests using either:
+- The `__clerk_testing_token` query parameter
+- The `Clerk-Testing-Token` request header
+
+```go
+func TestSignUp(t *testing.T) {
+    ctx := context.Background()
+
+    // Get a fresh testing token for this test
+    token, err := testingtoken.Create(ctx)
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    // Use the token in your test request
+    req, _ := http.NewRequest("POST", "https://yourapp.com/sign-up", body)
+    req.Header.Set("Clerk-Testing-Token", token.Token)
+
+    // Clerk will bypass bot protection for this request
+    resp, err := http.DefaultClient.Do(req)
+    // ...
+}
+```
+
+<Tip>
+  Create a fresh testing token for each test — do not reuse tokens between tests, as they expire quickly.
+</Tip>
+
+---
+
+## Types
+
+### `clerk.TestingToken`
+
+<ResponseField name="object" type="string">
+  Always `"testing_token"`.
+</ResponseField>
+
+<ResponseField name="token" type="string">
+  The testing token string. Pass this to your frontend or test requests.
+</ResponseField>
+
+<ResponseField name="expires_at" type="int64">
+  Unix timestamp (milliseconds) when the token expires. Testing tokens are short-lived; create a new one for each test.
+</ResponseField>

@@ -1,0 +1,261 @@
+---
+title: "JWT verification"
+description: "Manually verify and decode Clerk session JWTs using the jwt package."
+---
+
+The `github.com/clerk/clerk-sdk-go/v2/jwt` package provides low-level functions for verifying and decoding Clerk session tokens. Use this package when you need direct access to JWT verification logic outside of HTTP middleware — for example in gRPC interceptors, background workers, or WebSocket handlers.
+
+---
+
+## jwt.Verify
+
+`jwt.Verify` validates a Clerk session JWT and returns the parsed `*clerk.SessionClaims`.
+
+```go
+import (
+    "context"
+    "github.com/clerk/clerk-sdk-go/v2/jwt"
+)
+
+claims, err := jwt.Verify(context.Background(), &jwt.VerifyParams{
+    Token: sessionToken,
+})
+if err != nil {
+    // Token is invalid or expired.
+    return err
+}
+// Use claims.Subject, claims.SessionID, etc.
+```
+
+### VerifyParams
+
+<ParamField body="Token" type="string" required>
+  The Clerk session JWT to verify.
+</ParamField>
+
+<ParamField body="JWK" type="*clerk.JSONWebKey">
+  A static JSON Web Key to use for verification. When provided, no JWKS network request is made. It is the caller's responsibility to rotate this key when Clerk rolls signing keys.
+</ParamField>
+
+<ParamField body="JWKSClient" type="*jwks.Client">
+  A custom JWKS client for fetching the key set. When neither `JWK` nor `JWKSClient` is set, `Verify` creates a JWKS client backed by the package-level backend. Ignored when `JWK` is set.
+</ParamField>
+
+<ParamField body="Clock" type="clerk.Clock">
+  A custom time source used when validating `exp`, `nbf`, and `iat` claims. Defaults to `clerk.NewClock()`, which calls `time.Now().UTC()`.
+</ParamField>
+
+<ParamField body="CustomClaimsConstructor" type="func(context.Context) any">
+  A constructor that returns a pointer to a struct describing custom JWT claims. The populated struct is placed in `SessionClaims.Custom`.
+</ParamField>
+
+<ParamField body="Leeway" type="time.Duration">
+  Extra time to grant after token expiry. Useful for defending against clock skew between your servers and Clerk.
+</ParamField>
+
+<ParamField body="IsSatellite" type="bool">
+  When `true`, the issuer (`iss`) claim is not validated. Set this for satellite domain deployments.
+</ParamField>
+
+<ParamField body="ProxyURL" type="*string">
+  The URL of a server that proxies the Clerk Frontend API. When set, the issuer claim is validated against this URL instead of the standard Clerk issuer pattern.
+</ParamField>
+
+<ParamField body="AuthorizedPartyHandler" type="func(string) bool">
+  A function to validate the `azp` (authorized party) claim. Return `false` to reject the token.
+</ParamField>
+
+---
+
+## jwt.Decode
+
+`jwt.Decode` parses a JWT **without verifying its signature or claims**. Use it only when you need to inspect token metadata (such as the key ID) before performing full verification.
+
+<Warning>
+  The token is **not validated**. Claims returned by `Decode` must not be trusted for authorization decisions.
+</Warning>
+
+```go
+unverified, err := jwt.Decode(context.Background(), &jwt.DecodeParams{
+    Token: rawToken,
+})
+if err != nil {
+    return err
+}
+// Safe uses: inspect unverified.KeyID to select a JWK,
+// or log unverified.Subject for debugging.
+fmt.Println(unverified.KeyID) // the "kid" header claim
+```
+
+`Decode` returns a `*clerk.UnverifiedToken`:
+
+```go
+type UnverifiedToken struct {
+    RegisteredClaims          // iss, sub, aud, exp, nbf, iat, jti
+    Extra    map[string]any   // any non-standard claims
+    KeyID    string           // "kid" JWT header
+}
+```
+
+---
+
+## jwt.GetJSONWebKey
+
+`jwt.GetJSONWebKey` fetches Clerk's JSON Web Key Set from the API and returns the key matching the given `kid`. Useful when you manage JWK caching yourself.
+
+```go
+jwk, err := jwt.GetJSONWebKey(context.Background(), &jwt.GetJSONWebKeyParams{
+    KeyID: "the-kid-from-jwt-header",
+})
+if err != nil {
+    return err
+}
+// Use jwk in VerifyParams.JWK for subsequent calls.
+claims, err := jwt.Verify(ctx, &jwt.VerifyParams{
+    Token: sessionToken,
+    JWK:   jwk,
+})
+```
+
+<ParamField body="KeyID" type="string" required>
+  The `kid` claim from the JWT header. Obtained from `jwt.Decode` or parsed directly from the token.
+</ParamField>
+
+<ParamField body="JWKSClient" type="*jwks.Client">
+  A custom JWKS client. When `nil`, a default client backed by the package-level backend is used.
+</ParamField>
+
+<Note>
+  Unlike the HTTP middleware, `jwt.GetJSONWebKey` does **not** cache the returned key. Cache it yourself if you call `Verify` in a hot path.
+</Note>
+
+---
+
+## SessionClaims type
+
+`jwt.Verify` returns a `*clerk.SessionClaims` which embeds the standard IANA registered claims and Clerk-specific private claims.
+
+```go
+type SessionClaims struct {
+    // Standard IANA JWT claims
+    RegisteredClaims
+
+    // Clerk private claims
+    Version                       int
+    SessionID                     string
+    AuthorizedParty               string
+    ActiveOrganizationID          string
+    ActiveOrganizationSlug        string
+    ActiveOrganizationRole        string
+    ActiveOrganizationPermissions []string
+    Actor                         json.RawMessage
+    FactorVerificationAge         [2]int64
+
+    // Custom holds user-defined claims populated by CustomClaimsConstructor.
+    Custom any
+}
+```
+
+`RegisteredClaims` fields (`Issuer`, `Subject`, `Audience`, `Expiry`, `NotBefore`, `IssuedAt`, `ID`) use pointer `int64` for time fields so that `nil` is distinguishable from a zero Unix timestamp.
+
+---
+
+## HasPermission and HasRole
+
+Use these helpers to check organisation-level access on a verified session.
+
+```go
+claims, _ := jwt.Verify(ctx, &jwt.VerifyParams{Token: token})
+
+// Check for a specific permission in the active organisation.
+if !claims.HasPermission("org:billing:write") {
+    http.Error(w, "forbidden", http.StatusForbidden)
+    return
+}
+
+// Check for a specific role (prefer HasPermission for most cases).
+if claims.HasRole("org:admin") {
+    // ...
+}
+```
+
+<Tip>
+  Prefer `HasPermission` over `HasRole`. A single permission check is more precise than a role check and is easier to reason about when roles change.
+</Tip>
+
+---
+
+## NeedsReverification
+
+`NeedsReverification` determines whether the session must be re-authenticated before the request can proceed, given a `SessionReverificationPolicy`.
+
+```go
+policy := clerk.SessionReverificationStrict // second_factor, 10 minutes
+
+if claims.NeedsReverification(policy) {
+    // Prompt the user to re-authenticate.
+}
+```
+
+The method checks the `fva` (factor verification age) claim against the policy's `AfterMinutes` threshold and `Level`:
+
+| Level | Behaviour |
+|---|---|
+| `first_factor` | First factor must be within `AfterMinutes` |
+| `second_factor` | Second factor (if enabled) must be within `AfterMinutes` |
+| `multi_factor` | Both factors (if second is enabled) must be within `AfterMinutes` |
+
+---
+
+## Custom claims
+
+To parse application-specific JWT claims, pass a `CustomClaimsConstructor` to `VerifyParams`:
+
+```go
+type MyCustomClaims struct {
+    Plan       string `json:"plan"`
+    FeatureSet []string `json:"feature_set"`
+}
+
+claims, err := jwt.Verify(ctx, &jwt.VerifyParams{
+    Token: sessionToken,
+    CustomClaimsConstructor: func(_ context.Context) any {
+        return &MyCustomClaims{}
+    },
+})
+if err != nil {
+    return err
+}
+
+custom, ok := claims.Custom.(*MyCustomClaims)
+if ok {
+    fmt.Println(custom.Plan) // "pro"
+}
+```
+
+The constructor is called once per `Verify` invocation. The returned pointer is populated with any matching JSON fields from the token payload.
+
+---
+
+## Leeway and clock skew
+
+A small leeway value prevents transient failures when your server clock drifts slightly behind Clerk's:
+
+```go
+claims, err := jwt.Verify(ctx, &jwt.VerifyParams{
+    Token:  sessionToken,
+    Leeway: 5 * time.Second,
+})
+```
+
+For full control over the time source — useful in tests — implement the `clerk.Clock` interface:
+
+```go
+type fixedClock struct{ t time.Time }
+func (c *fixedClock) Now() time.Time { return c.t }
+
+claims, err := jwt.Verify(ctx, &jwt.VerifyParams{
+    Token: sessionToken,
+    Clock: &fixedClock{t: time.Now()},
+})
+```

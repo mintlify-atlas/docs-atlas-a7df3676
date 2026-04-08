@@ -1,0 +1,132 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Clerk Go SDK",
+  "projectDescription": "The official Go SDK for accessing the Clerk Backend API, providing authentication, user management, and organization operations.",
+  "theme": "luma",
+  "primaryColor": "#7c7c7c",
+  "lightColor": "#0b0b0b",
+  "darkColor": "#c7c7c7",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/configuration",
+              "guides/http-middleware",
+              "guides/jwt-verification",
+              "guides/error-handling",
+              "guides/testing",
+              "guides/migration-v1-to-v2"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core",
+            "pages": [
+              "api-reference/overview",
+              "api-reference/users",
+              "api-reference/sessions",
+              "api-reference/clients"
+            ]
+          },
+          {
+            "group": "Organizations",
+            "pages": [
+              "api-reference/organizations",
+              "api-reference/organization-memberships",
+              "api-reference/organization-invitations",
+              "api-reference/organization-roles",
+              "api-reference/organization-permissions",
+              "api-reference/organization-domains"
+            ]
+          },
+          {
+            "group": "Authentication",
+            "pages": [
+              "api-reference/sign-in-tokens",
+              "api-reference/invitations",
+              "api-reference/allowlist",
+              "api-reference/blocklist"
+            ]
+          },
+          {
+            "group": "Identity & Verification",
+            "pages": [
+              "api-reference/email-addresses",
+              "api-reference/phone-numbers",
+              "api-reference/domains",
+              "api-reference/saml-connections"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "api-reference/jwks",
+              "api-reference/webhooks",
+              "api-reference/instance-settings",
+              "api-reference/actor-tokens",
+              "api-reference/waitlist"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Resource-based API client with package-per-resource structure",
+    "HTTP middleware for Bearer token authentication (WithHeaderAuthorization, RequireHeaderAuthorization)",
+    "JWT verification and decoding with JWKS caching",
+    "Session claims extraction and organization permission/role checks",
+    "Support for both package-level (single key) and client-based (multi-key) usage patterns",
+    "Session reverification middleware and policy enforcement",
+    "Custom claims support via constructor functions",
+    "Comprehensive error handling via APIErrorResponse with trace IDs",
+    "Testable backend interface with mock-friendly design"
+  ],
+  "publicApiSurface": [
+    "clerk.SetKey(key string)",
+    "clerk.NewBackend(config *BackendConfig) Backend",
+    "clerk.GetBackend() Backend",
+    "clerk.SetBackend(b Backend)",
+    "clerk.SessionClaimsFromContext(ctx context.Context) (*SessionClaims, bool)",
+    "clerk.ContextWithSessionClaims(ctx context.Context, value any) context.Context",
+    "clerk.SessionClaims.HasPermission(permission string) bool",
+    "clerk.SessionClaims.HasRole(role string) bool",
+    "clerk.SessionClaims.NeedsReverification(policy SessionReverificationPolicy) bool",
+    "jwt.Verify(ctx context.Context, params *VerifyParams) (*clerk.SessionClaims, error)",
+    "jwt.Decode(ctx context.Context, params *DecodeParams) (*clerk.UnverifiedToken, error)",
+    "jwt.GetJSONWebKey(ctx context.Context, params *GetJSONWebKeyParams) (*clerk.JSONWebKey, error)",
+    "http.WithHeaderAuthorization(opts ...AuthorizationOption) func(http.Handler) http.Handler",
+    "http.RequireHeaderAuthorization(opts ...AuthorizationOption) func(http.Handler) http.Handler",
+    "http.NeedsSessionReverification(policy clerk.SessionReverificationPolicy) func(http.Handler) http.Handler",
+    "user.Create / user.Get / user.Update / user.Delete / user.List",
+    "organization.Create / organization.Get / organization.Update / organization.Delete / organization.List",
+    "session.Get / session.List / session.Revoke",
+    "organizationmembership.Create / organizationmembership.List / organizationmembership.Update / organizationmembership.Delete",
+    "invitation.Create / invitation.BulkCreate / invitation.List / invitation.Revoke",
+    "signintoken.Create",
+    "domain.Create / domain.Delete / domain.List",
+    "samlconnection.Create / samlconnection.Get / samlconnection.Update / samlconnection.Delete / samlconnection.List",
+    "allowlistidentifier.Create / allowlistidentifier.Delete / allowlistidentifier.List",
+    "blocklistidentifier.Create / blocklistidentifier.Delete / blocklistidentifier.List",
+    "jwks.Get",
+    "instancesettings.Get / instancesettings.Update",
+    "waitlistentry.Create / waitlistentry.List",
+    "oauthapplication.Create / oauthapplication.Get / oauthapplication.Update / oauthapplication.Delete / oauthapplication.List"
+  ]
+}

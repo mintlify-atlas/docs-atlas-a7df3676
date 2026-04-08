@@ -1,0 +1,406 @@
+---
+title: 'Organization memberships'
+description: 'Add, update, remove, and list members within an organization.'
+---
+
+Import the `organizationmembership` package to manage organization memberships.
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/organizationmembership"
+```
+
+## Operations
+
+### Create
+
+Adds a new member to an organization.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.OrganizationMembership, error)
+// Client method:
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.OrganizationMembership, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationmembership"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    userID := "user_123"
+    role := "org:member"
+    membership, err := organizationmembership.Create(context.Background(), &organizationmembership.CreateParams{
+        OrganizationID: "org_123",
+        UserID:         &userID,
+        Role:           &role,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationmembership"
+    )
+
+    client := organizationmembership.NewClient(&clerk.ClientConfig{})
+
+    userID := "user_123"
+    role := "org:member"
+    membership, err := client.Create(context.Background(), &organizationmembership.CreateParams{
+        OrganizationID: "org_123",
+        UserID:         &userID,
+        Role:           &role,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### CreateParams
+
+<ParamField path="OrganizationID" type="string" required>
+  The ID of the organization to add the member to.
+</ParamField>
+
+<ParamField path="UserID" type="*string">
+  The ID of the user to add as a member.
+</ParamField>
+
+<ParamField path="Role" type="*string">
+  The role to assign to the new member (e.g., `"org:admin"`, `"org:member"`).
+</ParamField>
+
+---
+
+### Update
+
+Updates an organization membership, such as changing a member's role.
+
+```go
+func Update(ctx context.Context, params *UpdateParams) (*clerk.OrganizationMembership, error)
+// Client method:
+func (c *Client) Update(ctx context.Context, params *UpdateParams) (*clerk.OrganizationMembership, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationmembership"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    role := "org:admin"
+    membership, err := organizationmembership.Update(context.Background(), &organizationmembership.UpdateParams{
+        OrganizationID: "org_123",
+        UserID:         "user_123",
+        Role:           &role,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationmembership"
+    )
+
+    client := organizationmembership.NewClient(&clerk.ClientConfig{})
+
+    role := "org:admin"
+    membership, err := client.Update(context.Background(), &organizationmembership.UpdateParams{
+        OrganizationID: "org_123",
+        UserID:         "user_123",
+        Role:           &role,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### UpdateParams
+
+<ParamField path="OrganizationID" type="string" required>
+  The ID of the organization.
+</ParamField>
+
+<ParamField path="UserID" type="string" required>
+  The ID of the user whose membership to update.
+</ParamField>
+
+<ParamField path="Role" type="*string">
+  The new role to assign to the member.
+</ParamField>
+
+---
+
+### Delete
+
+Removes a member from an organization.
+
+```go
+func Delete(ctx context.Context, params *DeleteParams) (*clerk.OrganizationMembership, error)
+// Client method:
+func (c *Client) Delete(ctx context.Context, params *DeleteParams) (*clerk.OrganizationMembership, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationmembership"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    membership, err := organizationmembership.Delete(context.Background(), &organizationmembership.DeleteParams{
+        OrganizationID: "org_123",
+        UserID:         "user_123",
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationmembership"
+    )
+
+    client := organizationmembership.NewClient(&clerk.ClientConfig{})
+
+    membership, err := client.Delete(context.Background(), &organizationmembership.DeleteParams{
+        OrganizationID: "org_123",
+        UserID:         "user_123",
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### DeleteParams
+
+<ParamField path="OrganizationID" type="string" required>
+  The ID of the organization.
+</ParamField>
+
+<ParamField path="UserID" type="string" required>
+  The ID of the user to remove from the organization.
+</ParamField>
+
+---
+
+### List
+
+Returns a list of memberships for an organization.
+
+```go
+func List(ctx context.Context, params *ListParams) (*clerk.OrganizationMembershipList, error)
+// Client method:
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.OrganizationMembershipList, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationmembership"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    list, err := organizationmembership.List(context.Background(), &organizationmembership.ListParams{
+        OrganizationID: "org_123",
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationmembership"
+    )
+
+    client := organizationmembership.NewClient(&clerk.ClientConfig{})
+
+    list, err := client.List(context.Background(), &organizationmembership.ListParams{
+        OrganizationID: "org_123",
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### ListParams
+
+<ParamField path="OrganizationID" type="string" required>
+  The ID of the organization to list members for.
+</ParamField>
+
+<ParamField path="Limit" type="int64">
+  Maximum number of results to return. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="Offset" type="int64">
+  Number of results to skip. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="OrderBy" type="*string">
+  The field to order results by. Prefix with `-` for descending order.
+</ParamField>
+
+<ParamField path="Query" type="*string">
+  Filters memberships whose user matches the search query.
+</ParamField>
+
+<ParamField path="EmailAddressQuery" type="*string">
+  Filters memberships by email address using a partial match.
+</ParamField>
+
+<ParamField path="PhoneNumberQuery" type="*string">
+  Filters memberships by phone number using a partial match.
+</ParamField>
+
+<ParamField path="UsernameQuery" type="*string">
+  Filters memberships by username using a partial match.
+</ParamField>
+
+<ParamField path="NameQuery" type="*string">
+  Filters memberships by name using a partial match.
+</ParamField>
+
+<ParamField path="Roles" type="[]string">
+  Filters memberships to only those with one of the given roles.
+</ParamField>
+
+<ParamField path="UserIDs" type="[]string">
+  Filters memberships to only those with one of the given user IDs.
+</ParamField>
+
+<ParamField path="EmailAddresses" type="[]string">
+  Filters memberships to only those with one of the given email addresses.
+</ParamField>
+
+<ParamField path="PhoneNumbers" type="[]string">
+  Filters memberships to only those with one of the given phone numbers.
+</ParamField>
+
+<ParamField path="Usernames" type="[]string">
+  Filters memberships to only those with one of the given usernames.
+</ParamField>
+
+<ParamField path="Web3Wallets" type="[]string">
+  Filters memberships to only those with one of the given web3 wallet addresses.
+</ParamField>
+
+<ParamField path="CreatedAtBefore" type="*int64">
+  Filters memberships created before this Unix timestamp (milliseconds).
+</ParamField>
+
+<ParamField path="CreatedAtAfter" type="*int64">
+  Filters memberships created after this Unix timestamp (milliseconds).
+</ParamField>
+
+<ParamField path="LastActiveAtBefore" type="*int64">
+  Filters memberships whose user was last active before this Unix timestamp (milliseconds).
+</ParamField>
+
+<ParamField path="LastActiveAtAfter" type="*int64">
+  Filters memberships whose user was last active after this Unix timestamp (milliseconds).
+</ParamField>
+
+---
+
+## Response types
+
+### OrganizationMembership
+
+<ResponseField name="object" type="string">
+  Always `"organization_membership"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  The unique identifier for the membership.
+</ResponseField>
+
+<ResponseField name="organization" type="object">
+  The organization this membership belongs to.
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">The organization's unique identifier.</ResponseField>
+    <ResponseField name="name" type="string">The organization's name.</ResponseField>
+    <ResponseField name="slug" type="string">The organization's slug.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="permissions" type="string[]">
+  The list of permissions the member has within the organization.
+</ResponseField>
+
+<ResponseField name="public_metadata" type="object">
+  Arbitrary metadata accessible to your frontend.
+</ResponseField>
+
+<ResponseField name="private_metadata" type="object">
+  Arbitrary metadata accessible only from the Backend API.
+</ResponseField>
+
+<ResponseField name="role" type="string">
+  The member's role key (e.g., `"org:admin"`).
+</ResponseField>
+
+<ResponseField name="role_name" type="string">
+  The human-readable name of the member's role.
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  Unix timestamp (milliseconds) when the membership was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="integer">
+  Unix timestamp (milliseconds) when the membership was last updated.
+</ResponseField>
+
+<ResponseField name="public_user_data" type="object">
+  Public data about the member's user account.
+
+  <Expandable title="properties">
+    <ResponseField name="user_id" type="string">The user's unique identifier.</ResponseField>
+    <ResponseField name="first_name" type="string | null">The user's first name.</ResponseField>
+    <ResponseField name="last_name" type="string | null">The user's last name.</ResponseField>
+    <ResponseField name="image_url" type="string | null">URL of the user's profile image.</ResponseField>
+    <ResponseField name="has_image" type="boolean">Whether the user has a profile image.</ResponseField>
+    <ResponseField name="identifier" type="string">The user's primary identifier (email, phone, or username).</ResponseField>
+    <ResponseField name="username" type="string | null">The user's username.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### OrganizationMembershipList
+
+<ResponseField name="data" type="OrganizationMembership[]">
+  The list of organization memberships.
+</ResponseField>
+
+<ResponseField name="total_count" type="integer">
+  The total number of memberships matching the query.
+</ResponseField>

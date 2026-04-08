@@ -1,0 +1,223 @@
+---
+title: "M2M Tokens"
+description: "Create, list, revoke, and verify machine-to-machine tokens for service-to-service authentication."
+---
+
+The `m2m_token` package provides operations for managing machine-to-machine (M2M) tokens. M2M tokens enable service-to-service authentication without a user session — ideal for background jobs, microservices, and automated pipelines.
+
+## Import
+
+```go
+import m2mtoken "github.com/clerk/clerk-sdk-go/v2/m2m_token"
+```
+
+<Note>
+  The package name is `m2m_token` (with underscore). When importing, alias it for convenience: `import m2mtoken "github.com/clerk/clerk-sdk-go/v2/m2m_token"`.
+</Note>
+
+---
+
+## Operations
+
+### `Create`
+
+Creates a new M2M token. The token value is only present in the creation response.
+
+```go
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.M2MTokenWithToken, error)
+```
+
+#### CreateParams
+
+<ParamField path="SecondsUntilExpiration" type="*int64">
+  How long the token is valid, in seconds. Omit for a non-expiring token.
+</ParamField>
+
+<ParamField path="Claims" type="*json.RawMessage">
+  Custom JSON claims to include in the token.
+</ParamField>
+
+<ParamField path="TokenFormat" type="*string">
+  The token format to use. Defaults to the instance setting.
+</ParamField>
+
+```go
+clerk.SetKey("sk_live_...")
+
+client := m2mtoken.NewClient(&clerk.ClientConfig{})
+
+token, err := client.Create(context.Background(), &m2mtoken.CreateParams{
+    SecondsUntilExpiration: clerk.Int64(3600), // 1 hour
+    Claims:                 clerk.JSONRawMessage(json.RawMessage(`{"service": "data-pipeline"}`)),
+})
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("Token:", token.Token) // use this for authentication
+fmt.Println("ID:", token.ID)
+```
+
+<Warning>
+  The `Token` field is only present in the response immediately after creation. Store it securely for the duration of its use.
+</Warning>
+
+---
+
+### `List`
+
+Returns a paginated list of M2M tokens.
+
+```go
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.M2MTokenList, error)
+```
+
+#### ListParams
+
+<ParamField path="Limit" type="*int64">
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="Offset" type="*int64">
+  Number of results to skip.
+</ParamField>
+
+<ParamField path="Subject" type="*string">
+  Filter by subject.
+</ParamField>
+
+<ParamField path="Revoked" type="*bool">
+  When `true`, return only revoked tokens. When `false`, return only active tokens.
+</ParamField>
+
+<ParamField path="Expired" type="*bool">
+  When `true`, return only expired tokens. When `false`, return only non-expired tokens.
+</ParamField>
+
+```go
+list, err := client.List(context.Background(), &m2mtoken.ListParams{
+    ListParams: clerk.ListParams{Limit: clerk.Int64(20)},
+    Revoked:    clerk.Bool(false),
+    Expired:    clerk.Bool(false),
+})
+if err != nil {
+    log.Fatal(err)
+}
+for _, t := range list.M2MTokens {
+    fmt.Println(t.ID, t.Subject)
+}
+```
+
+---
+
+### `Revoke`
+
+Revokes an M2M token, preventing it from being used for authentication.
+
+```go
+func (c *Client) Revoke(ctx context.Context, tokenID string, params *RevokeParams) (*clerk.M2MToken, error)
+```
+
+#### RevokeParams
+
+<ParamField path="RevocationReason" type="*string">
+  Optional human-readable reason for revocation.
+</ParamField>
+
+```go
+token, err := client.Revoke(context.Background(), "m2m_abc123", &m2mtoken.RevokeParams{
+    RevocationReason: clerk.String("Token compromised"),
+})
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("Revoked:", token.Revoked)
+```
+
+---
+
+### `Verify`
+
+Verifies that a given token string corresponds to a valid, non-revoked, non-expired M2M token.
+
+```go
+func (c *Client) Verify(ctx context.Context, params *VerifyParams) (*clerk.M2MToken, error)
+```
+
+#### VerifyParams
+
+<ParamField path="Token" type="string" required>
+  The M2M token string to verify.
+</ParamField>
+
+```go
+token, err := client.Verify(context.Background(), &m2mtoken.VerifyParams{
+    Token: "m2m_live_...",
+})
+if err != nil {
+    // Token is invalid, revoked, or expired
+    log.Fatal(err)
+}
+fmt.Println("Valid token for subject:", token.Subject)
+```
+
+---
+
+## Types
+
+### `clerk.M2MToken`
+
+<ResponseField name="object" type="string">
+  Always `"m2m_token"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Unique identifier for the token.
+</ResponseField>
+
+<ResponseField name="subject" type="string">
+  The subject the token authenticates as.
+</ResponseField>
+
+<ResponseField name="claims" type="json.RawMessage">
+  Custom claims associated with this token.
+</ResponseField>
+
+<ResponseField name="scopes" type="[]string">
+  Scopes granted to this token.
+</ResponseField>
+
+<ResponseField name="revoked" type="bool">
+  Whether the token has been revoked.
+</ResponseField>
+
+<ResponseField name="revocation_reason" type="*string">
+  Reason for revocation, if any.
+</ResponseField>
+
+<ResponseField name="expired" type="bool">
+  Whether the token has expired.
+</ResponseField>
+
+<ResponseField name="expiration" type="*int64">
+  Unix timestamp (milliseconds) when the token expires, if set.
+</ResponseField>
+
+<ResponseField name="last_used_at" type="*int64">
+  Unix timestamp (milliseconds) of the last time this token was used.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) when the token was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) when the token was last updated.
+</ResponseField>
+
+### `clerk.M2MTokenWithToken`
+
+Returned only by `Create`. Embeds `clerk.M2MToken` and adds:
+
+<ResponseField name="token" type="string">
+  The raw M2M token string. Only returned once at creation time.
+</ResponseField>

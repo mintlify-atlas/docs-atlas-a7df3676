@@ -1,0 +1,651 @@
+---
+title: 'Organizations'
+description: 'Create and manage organizations in your Clerk instance.'
+---
+
+Import the `organization` package to manage organizations.
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/organization"
+```
+
+## Operations
+
+### Create
+
+Creates a new organization.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.Organization, error)
+// Client method:
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.Organization, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+        "encoding/json"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    name := "Acme Inc"
+    slug := "acme-inc"
+    org, err := organization.Create(context.Background(), &organization.CreateParams{
+        Name: &name,
+        Slug: &slug,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    client := organization.NewClient(&clerk.ClientConfig{})
+
+    name := "Acme Inc"
+    slug := "acme-inc"
+    org, err := client.Create(context.Background(), &organization.CreateParams{
+        Name: &name,
+        Slug: &slug,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### CreateParams
+
+<ParamField path="Name" type="*string">
+  The name of the organization.
+</ParamField>
+
+<ParamField path="Slug" type="*string">
+  The slug of the organization.
+</ParamField>
+
+<ParamField path="CreatedBy" type="*string">
+  The ID of the user who created the organization.
+</ParamField>
+
+<ParamField path="MaxAllowedMemberships" type="*int64">
+  The maximum number of memberships allowed in the organization.
+</ParamField>
+
+<ParamField path="RoleSetKey" type="*string">
+  Preview field — not yet available for all customers. Using this field will cause an error to be returned.
+</ParamField>
+
+<ParamField path="PublicMetadata" type="*json.RawMessage">
+  Arbitrary metadata to be stored alongside the organization, accessible to your frontend.
+</ParamField>
+
+<ParamField path="PrivateMetadata" type="*json.RawMessage">
+  Arbitrary metadata to be stored alongside the organization, accessible only from the Backend API.
+</ParamField>
+
+---
+
+### Get
+
+Retrieves details for an organization by ID or slug.
+
+```go
+func Get(ctx context.Context, idOrSlug string) (*clerk.Organization, error)
+// Client method:
+func (c *Client) Get(ctx context.Context, idOrSlug string) (*clerk.Organization, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    org, err := organization.Get(context.Background(), "org_123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    client := organization.NewClient(&clerk.ClientConfig{})
+    org, err := client.Get(context.Background(), "org_123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### GetWithParams
+
+Retrieves details for an organization by ID or slug with additional query options.
+
+```go
+func GetWithParams(ctx context.Context, idOrSlug string, params *GetParams) (*clerk.Organization, error)
+// Client method:
+func (c *Client) GetWithParams(ctx context.Context, idOrSlug string, params *GetParams) (*clerk.Organization, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    includeMembersCount := true
+    org, err := organization.GetWithParams(context.Background(), "org_123", &organization.GetParams{
+        IncludeMembersCount: &includeMembersCount,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    client := organization.NewClient(&clerk.ClientConfig{})
+
+    includeMembersCount := true
+    org, err := client.GetWithParams(context.Background(), "org_123", &organization.GetParams{
+        IncludeMembersCount: &includeMembersCount,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### GetParams
+
+<ParamField path="IncludeMembersCount" type="*bool">
+  When `true`, the response includes the `members_count` field.
+</ParamField>
+
+---
+
+### Update
+
+Updates an organization.
+
+```go
+func Update(ctx context.Context, id string, params *UpdateParams) (*clerk.Organization, error)
+// Client method:
+func (c *Client) Update(ctx context.Context, id string, params *UpdateParams) (*clerk.Organization, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    name := "Acme Corp"
+    org, err := organization.Update(context.Background(), "org_123", &organization.UpdateParams{
+        Name: &name,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    client := organization.NewClient(&clerk.ClientConfig{})
+
+    name := "Acme Corp"
+    org, err := client.Update(context.Background(), "org_123", &organization.UpdateParams{
+        Name: &name,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### UpdateParams
+
+<ParamField path="Name" type="*string">
+  The updated name of the organization.
+</ParamField>
+
+<ParamField path="Slug" type="*string">
+  The updated slug of the organization.
+</ParamField>
+
+<ParamField path="MaxAllowedMemberships" type="*int64">
+  The maximum number of memberships allowed in the organization.
+</ParamField>
+
+<ParamField path="RoleSetKey" type="*string">
+  Preview field — not yet available for all customers. Using this field will cause an error to be returned.
+</ParamField>
+
+<ParamField path="PublicMetadata" type="*json.RawMessage">
+  Arbitrary metadata accessible to your frontend. Replaces the existing value.
+</ParamField>
+
+<ParamField path="PrivateMetadata" type="*json.RawMessage">
+  Arbitrary metadata accessible only from the Backend API. Replaces the existing value.
+</ParamField>
+
+<ParamField path="AdminDeleteEnabled" type="*bool">
+  Whether admins can delete the organization via the Frontend API.
+</ParamField>
+
+---
+
+### Delete
+
+Deletes an organization.
+
+```go
+func Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+// Client method:
+func (c *Client) Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    deleted, err := organization.Delete(context.Background(), "org_123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    client := organization.NewClient(&clerk.ClientConfig{})
+    deleted, err := client.Delete(context.Background(), "org_123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### List
+
+Returns a list of organizations.
+
+```go
+func List(ctx context.Context, params *ListParams) (*clerk.OrganizationList, error)
+// Client method:
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.OrganizationList, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    query := "acme"
+    list, err := organization.List(context.Background(), &organization.ListParams{
+        Query: &query,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    client := organization.NewClient(&clerk.ClientConfig{})
+
+    query := "acme"
+    list, err := client.List(context.Background(), &organization.ListParams{
+        Query: &query,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### ListParams
+
+<ParamField path="Limit" type="int64">
+  The maximum number of results to return. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="Offset" type="int64">
+  The number of results to skip. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="IncludeMembersCount" type="*bool">
+  When `true`, each organization in the response includes the `members_count` field.
+</ParamField>
+
+<ParamField path="IncludeMissingMemberWithElevatedPermissions" type="*bool">
+  When `true`, each organization includes `missing_member_with_elevated_permissions`.
+</ParamField>
+
+<ParamField path="OrderBy" type="*string">
+  The field to order results by. Prefix with `-` for descending order (e.g., `-created_at`).
+</ParamField>
+
+<ParamField path="Query" type="*string">
+  Filters organizations whose name or slug match the query string.
+</ParamField>
+
+<ParamField path="UserIDs" type="[]string">
+  Filters organizations that have at least one member with one of the given user IDs.
+</ParamField>
+
+<ParamField path="FilterBy" type="[]string">
+  Additional filters to apply to the list.
+</ParamField>
+
+---
+
+### UpdateMetadata
+
+Updates the organization's metadata by merging the provided values with the existing ones.
+
+```go
+func UpdateMetadata(ctx context.Context, id string, params *UpdateMetadataParams) (*clerk.Organization, error)
+// Client method:
+func (c *Client) UpdateMetadata(ctx context.Context, id string, params *UpdateMetadataParams) (*clerk.Organization, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+        "encoding/json"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    meta := json.RawMessage(`{"plan":"enterprise"}`)
+    org, err := organization.UpdateMetadata(context.Background(), "org_123", &organization.UpdateMetadataParams{
+        PublicMetadata: &meta,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+        "encoding/json"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    client := organization.NewClient(&clerk.ClientConfig{})
+
+    meta := json.RawMessage(`{"plan":"enterprise"}`)
+    org, err := client.UpdateMetadata(context.Background(), "org_123", &organization.UpdateMetadataParams{
+        PublicMetadata: &meta,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### UpdateMetadataParams
+
+<ParamField path="PublicMetadata" type="*json.RawMessage">
+  Metadata to merge with the existing public metadata.
+</ParamField>
+
+<ParamField path="PrivateMetadata" type="*json.RawMessage">
+  Metadata to merge with the existing private metadata.
+</ParamField>
+
+---
+
+### UpdateLogo
+
+Sets or replaces the organization's logo.
+
+```go
+func UpdateLogo(ctx context.Context, id string, params *UpdateLogoParams) (*clerk.Organization, error)
+// Client method:
+func (c *Client) UpdateLogo(ctx context.Context, id string, params *UpdateLogoParams) (*clerk.Organization, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+        "os"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    f, _ := os.Open("logo.png")
+    uploaderUserID := "user_123"
+    org, err := organization.UpdateLogo(context.Background(), "org_123", &organization.UpdateLogoParams{
+        File:           f,
+        UploaderUserID: &uploaderUserID,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+        "os"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    client := organization.NewClient(&clerk.ClientConfig{})
+
+    f, _ := os.Open("logo.png")
+    uploaderUserID := "user_123"
+    org, err := client.UpdateLogo(context.Background(), "org_123", &organization.UpdateLogoParams{
+        File:           f,
+        UploaderUserID: &uploaderUserID,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### UpdateLogoParams
+
+<ParamField path="File" type="multipart.File" required>
+  The image file to upload as the organization's logo.
+</ParamField>
+
+<ParamField path="UploaderUserID" type="*string">
+  The ID of the user performing the upload.
+</ParamField>
+
+---
+
+### DeleteLogo
+
+Removes the organization's logo.
+
+```go
+func DeleteLogo(ctx context.Context, id string) (*clerk.Organization, error)
+// Client method:
+func (c *Client) DeleteLogo(ctx context.Context, id string) (*clerk.Organization, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    org, err := organization.DeleteLogo(context.Background(), "org_123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organization"
+    )
+
+    client := organization.NewClient(&clerk.ClientConfig{})
+    org, err := client.DeleteLogo(context.Background(), "org_123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Response types
+
+### Organization
+
+<ResponseField name="object" type="string">
+  Always `"organization"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  The unique identifier for the organization.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The name of the organization.
+</ResponseField>
+
+<ResponseField name="slug" type="string">
+  The slug of the organization, used in URLs.
+</ResponseField>
+
+<ResponseField name="image_url" type="string | null">
+  The URL of the organization's logo image.
+</ResponseField>
+
+<ResponseField name="has_image" type="boolean">
+  Whether the organization has a logo image.
+</ResponseField>
+
+<ResponseField name="members_count" type="integer">
+  The total number of members. Only present when `include_members_count` is `true`.
+</ResponseField>
+
+<ResponseField name="missing_member_with_elevated_permissions" type="boolean">
+  Only present when `include_missing_member_with_elevated_permissions` is `true`.
+</ResponseField>
+
+<ResponseField name="pending_invitations_count" type="integer">
+  The number of pending invitations.
+</ResponseField>
+
+<ResponseField name="max_allowed_memberships" type="integer">
+  The maximum number of memberships allowed in the organization.
+</ResponseField>
+
+<ResponseField name="membership_limit_set_by" type="string | null">
+  Indicates who set the membership limit.
+</ResponseField>
+
+<ResponseField name="admin_delete_enabled" type="boolean">
+  Whether organization admins can delete the organization via the Frontend API.
+</ResponseField>
+
+<ResponseField name="role_set_key" type="string | null">
+  The key of the role set assigned to the organization. Preview field.
+</ResponseField>
+
+<ResponseField name="public_metadata" type="object">
+  Arbitrary metadata accessible to your frontend.
+</ResponseField>
+
+<ResponseField name="private_metadata" type="object">
+  Arbitrary metadata accessible only from the Backend API.
+</ResponseField>
+
+<ResponseField name="created_by" type="string">
+  The ID of the user who created the organization.
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  Unix timestamp (milliseconds) when the organization was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="integer">
+  Unix timestamp (milliseconds) when the organization was last updated.
+</ResponseField>
+
+### OrganizationList
+
+<ResponseField name="data" type="Organization[]">
+  The list of organizations.
+</ResponseField>
+
+<ResponseField name="total_count" type="integer">
+  The total number of organizations matching the query.
+</ResponseField>

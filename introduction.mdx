@@ -1,0 +1,98 @@
+---
+title: "Introduction"
+description: "The official Go SDK for the Clerk Backend API — user management, organizations, HTTP middleware, and JWT verification."
+---
+
+The Clerk Go SDK is the official Go client library for the [Clerk Backend API](https://clerk.com/docs/reference/backend-api). It provides idiomatic Go access to every Clerk resource with a consistent, context-aware interface.
+
+The module path is `github.com/clerk/clerk-sdk-go/v2` (current major version: v2).
+
+## Key capabilities
+
+- **User management** — create, read, update, delete, ban, and lock users
+- **Session management** — list and revoke sessions, verify session tokens
+- **Organizations** — manage organizations, memberships, invitations, roles, and permissions
+- **HTTP middleware** — protect Go HTTP handlers with `WithHeaderAuthorization` and `RequireHeaderAuthorization`
+- **JWT verification** — decode and verify Clerk session tokens against the JWKS endpoint
+
+## Two usage patterns
+
+The library supports two patterns depending on whether you need one or multiple API keys.
+
+### Without a client (recommended for most apps)
+
+Call package-level functions after setting the API key once with `clerk.SetKey`. This is the simpler path when your app uses a single Clerk secret key.
+
+```go
+import (
+    "context"
+
+    "github.com/clerk/clerk-sdk-go/v2"
+    "github.com/clerk/clerk-sdk-go/v2/user"
+    "github.com/clerk/clerk-sdk-go/v2/organization"
+)
+
+func main() {
+    ctx := context.Background()
+
+    // Set the API key once at startup
+    clerk.SetKey("sk_live_XXX")
+
+    // List users
+    users, err := user.List(ctx, &user.ListParams{})
+
+    // Create an organization
+    org, err := organization.Create(ctx, &organization.CreateParams{
+        Name: clerk.String("Clerk Inc"),
+    })
+    _ = users
+    _ = org
+    _ = err
+}
+```
+
+### With a client (for multiple API keys)
+
+Instantiate a `Client` per resource package, each configured with its own API key. Useful when you manage multiple Clerk instances or need per-request key isolation.
+
+```go
+import (
+    "context"
+
+    "github.com/clerk/clerk-sdk-go/v2"
+    "github.com/clerk/clerk-sdk-go/v2/user"
+)
+
+func main() {
+    ctx := context.Background()
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_XXX")
+    client := user.NewClient(config)
+
+    users, err := client.List(ctx, &user.ListParams{})
+    _ = users
+    _ = err
+}
+```
+
+<Note>
+For most use cases, the clientless pattern is simpler. Use the client-based pattern only when you need multiple Clerk API keys in the same process.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Make your first API call in minutes.
+  </Card>
+  <Card title="Installation" icon="download" href="/installation">
+    Install the SDK and set up your Go module.
+  </Card>
+  <Card title="HTTP middleware" icon="shield-halved" href="/guides/http-middleware">
+    Add Clerk authentication to any Go HTTP server.
+  </Card>
+  <Card title="Migration guide" icon="arrow-up-right-dots" href="/guides/migration-v1-to-v2">
+    Upgrading from v1? See what changed.
+  </Card>
+</CardGroup>

@@ -1,0 +1,182 @@
+---
+title: "Clients"
+description: "Retrieve and verify Clerk client records. List all clients for your instance."
+---
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/client"
+```
+
+<Note>
+  The `client` package provides access to Clerk **Client** resources — records that track a browser or device's interaction with your Clerk instance. To avoid confusion with the Go struct used to call the API, this page refers to the API resource as a **Clerk Client** and the SDK helper as `client.Client`.
+</Note>
+
+## The Clerk Client object
+
+<ResponseField name="ID" type="string">
+  The unique identifier for the Clerk Client.
+</ResponseField>
+
+<ResponseField name="Object" type="string">
+  Always `"client"`.
+</ResponseField>
+
+<ResponseField name="LastActiveSessionID" type="*string">
+  ID of the session that was most recently active for this client.
+</ResponseField>
+
+<ResponseField name="LastAuthenticationStrategy" type="*string">
+  The authentication strategy used in the client's most recent sign-in.
+</ResponseField>
+
+<ResponseField name="SignInID" type="*string">
+  ID of an in-progress sign-in attempt associated with this client, if any.
+</ResponseField>
+
+<ResponseField name="SignUpID" type="*string">
+  ID of an in-progress sign-up attempt associated with this client, if any.
+</ResponseField>
+
+<ResponseField name="SessionIDs" type="[]string">
+  IDs of all sessions associated with this client.
+</ResponseField>
+
+<ResponseField name="Sessions" type="[]*clerk.Session">
+  Full session objects associated with this client.
+</ResponseField>
+
+<ResponseField name="CreatedAt" type="int64">
+  Unix timestamp (milliseconds) when the client was created.
+</ResponseField>
+
+<ResponseField name="UpdatedAt" type="int64">
+  Unix timestamp (milliseconds) when the client was last updated.
+</ResponseField>
+
+---
+
+## Get
+
+Retrieves a Clerk Client by ID.
+
+```go
+func Get(ctx context.Context, id string) (*clerk.Client, error)
+// Client method:
+func (c *Client) Get(ctx context.Context, id string) (*clerk.Client, error)
+```
+
+### Example
+
+<CodeGroup>
+```go Package-level
+import (
+    "context"
+    "github.com/clerk/clerk-sdk-go/v2"
+    "github.com/clerk/clerk-sdk-go/v2/client"
+)
+
+clerk.SetKey("sk_live_...")
+
+clerkClient, err := client.Get(context.Background(), "client_abc123")
+```
+
+```go Client struct
+import (
+    "context"
+    "github.com/clerk/clerk-sdk-go/v2"
+    "github.com/clerk/clerk-sdk-go/v2/client"
+)
+
+cfg := &clerk.ClientConfig{}
+cfg.Key = clerk.String("sk_live_...")
+c := client.NewClient(cfg)
+
+clerkClient, err := c.Get(context.Background(), "client_abc123")
+```
+</CodeGroup>
+
+---
+
+## Verify
+
+Verifies the Clerk Client represented by the provided JWT and returns the associated `clerk.Client` record.
+
+```go
+func Verify(ctx context.Context, params *VerifyParams) (*clerk.Client, error)
+// Client method:
+func (c *Client) Verify(ctx context.Context, params *VerifyParams) (*clerk.Client, error)
+```
+
+### VerifyParams
+
+<ParamField path="Token" type="*string">
+  The client JWT to verify.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```go Package-level
+clerkClient, err := client.Verify(context.Background(), &client.VerifyParams{
+    Token: clerk.String("eyJhbGc..."),
+})
+```
+
+```go Client struct
+clerkClient, err := c.Verify(context.Background(), &client.VerifyParams{
+    Token: clerk.String("eyJhbGc..."),
+})
+```
+</CodeGroup>
+
+---
+
+## List
+
+<Warning>
+  **Deprecated.** This operation will be removed in a future version.
+</Warning>
+
+Returns a paginated list of all Clerk Clients for your instance.
+
+```go
+func List(ctx context.Context, params *ListParams) (*clerk.ClientList, error)
+// Client method:
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.ClientList, error)
+```
+
+`clerk.ClientList` has two fields: `Clients []*clerk.Client` and `TotalCount int64`.
+
+### ListParams
+
+<ParamField path="Limit" type="*int64">
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="Offset" type="*int64">
+  Number of results to skip.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```go Package-level
+list, err := client.List(context.Background(), &client.ListParams{
+    ListParams: clerk.ListParams{
+        Limit:  clerk.Int64(20),
+        Offset: clerk.Int64(0),
+    },
+})
+```
+
+```go Client struct
+list, err := c.List(context.Background(), &client.ListParams{
+    ListParams: clerk.ListParams{
+        Limit:  clerk.Int64(20),
+        Offset: clerk.Int64(0),
+    },
+})
+```
+</CodeGroup>

@@ -1,97 +1,86 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Clerk Go SDK"
+description: "The official Go SDK for accessing the Clerk Backend API — authentication, user management, organizations, and more."
 ---
 
-## Setting up
+The Clerk Go SDK gives you idiomatic Go access to the [Clerk Backend API](https://clerk.com/docs/reference/backend-api). It covers every resource — users, sessions, organizations, invitations, and more — with a consistent, context-aware interface.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get your first API call working in under five minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Installation" icon="download" href="/installation">
+    Install the SDK and set up your Go module.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="HTTP Middleware" icon="shield-halved" href="/guides/http-middleware">
+    Add Clerk authentication to any Go HTTP server.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Full reference for every package, type, and function.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Get started in four steps
 
-Everything you need to create world-class documentation.
+<Steps>
+  <Step title="Install the SDK">
+    Add the SDK to your Go module:
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+    ```bash
+    go get github.com/clerk/clerk-sdk-go/v2
+    ```
+  </Step>
+  <Step title="Set your secret key">
+    Configure the SDK with your Clerk secret key. Find it in the [Clerk Dashboard](https://dashboard.clerk.com) under **API Keys**.
 
-## Need inspiration?
+    ```go
+    import "github.com/clerk/clerk-sdk-go/v2"
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+    clerk.SetKey("sk_live_XXXX")
+    ```
+  </Step>
+  <Step title="Call an API">
+    Import the package for the resource you need and call the operation:
+
+    ```go
+    import (
+        "context"
+        "github.com/clerk/clerk-sdk-go/v2/user"
+    )
+
+    users, err := user.List(context.Background(), &user.ListParams{})
+    ```
+  </Step>
+  <Step title="Add authentication middleware">
+    Protect your HTTP handlers with Clerk's built-in middleware:
+
+    ```go
+    import clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
+
+    mux.Handle("/protected", clerkhttp.RequireHeaderAuthorization()(handler))
+    ```
+  </Step>
+</Steps>
+
+## Explore the SDK
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/guides/configuration">
+    Customize the HTTP client, base URL, and request headers.
+  </Card>
+  <Card title="JWT Verification" icon="key" href="/guides/jwt-verification">
+    Verify and decode session tokens manually.
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/guides/error-handling">
+    Work with structured API errors and trace IDs.
+  </Card>
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Mock the backend for fast, isolated unit tests.
+  </Card>
+  <Card title="Organizations" icon="building" href="/api-reference/organizations">
+    Manage teams, roles, permissions, and memberships.
+  </Card>
+  <Card title="Migration Guide" icon="arrow-up-right-dots" href="/guides/migration-v1-to-v2">
+    Upgrading from v1? See what changed.
+  </Card>
+</CardGroup>

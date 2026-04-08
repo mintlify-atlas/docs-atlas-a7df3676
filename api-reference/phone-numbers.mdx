@@ -1,0 +1,294 @@
+---
+title: "Phone Numbers"
+description: "Create, retrieve, update, and delete phone numbers associated with users."
+---
+
+## Overview
+
+The `phonenumber` package provides operations for managing phone numbers attached to Clerk users. Phone numbers can be used for SMS-based authentication and as a second factor.
+
+**Import path:** `github.com/clerk/clerk-sdk-go/v2/phonenumber`
+
+---
+
+## Operations
+
+### Create
+
+Creates a new phone number for a user.
+
+```
+func Create(ctx context.Context, params *CreateParams) (*clerk.PhoneNumber, error)
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.PhoneNumber, error)
+```
+
+#### CreateParams
+
+<ParamField path="UserID" type="*string">
+  The ID of the user to associate this phone number with.
+</ParamField>
+
+<ParamField path="PhoneNumber" type="*string">
+  The phone number string in E.164 format (e.g. `"+12015551234"`).
+</ParamField>
+
+<ParamField path="Verified" type="*bool">
+  Whether the phone number should be marked as verified. Defaults to `false`.
+</ParamField>
+
+<ParamField path="Primary" type="*bool">
+  Whether this phone number should be set as the user's primary phone number.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/phonenumber"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    verified := true
+    primary := true
+
+    phone, err := phonenumber.Create(context.Background(), &phonenumber.CreateParams{
+        UserID:      clerk.String("user_2abc123"),
+        PhoneNumber: clerk.String("+12015551234"),
+        Verified:    &verified,
+        Primary:     &primary,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/phonenumber"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := phonenumber.NewClient(config)
+
+    verified := true
+    primary := true
+
+    phone, err := client.Create(context.Background(), &phonenumber.CreateParams{
+        UserID:      clerk.String("user_2abc123"),
+        PhoneNumber: clerk.String("+12015551234"),
+        Verified:    &verified,
+        Primary:     &primary,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Get
+
+Retrieves a single phone number by ID.
+
+```
+func Get(ctx context.Context, id string) (*clerk.PhoneNumber, error)
+func (c *Client) Get(ctx context.Context, id string) (*clerk.PhoneNumber, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/phonenumber"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    phone, err := phonenumber.Get(context.Background(), "idn_2abc123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/phonenumber"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := phonenumber.NewClient(config)
+
+    phone, err := client.Get(context.Background(), "idn_2abc123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Update
+
+Updates an existing phone number specified by ID.
+
+```
+func Update(ctx context.Context, id string, params *UpdateParams) (*clerk.PhoneNumber, error)
+func (c *Client) Update(ctx context.Context, id string, params *UpdateParams) (*clerk.PhoneNumber, error)
+```
+
+#### UpdateParams
+
+<ParamField path="Verified" type="*bool">
+  Update the verified status of the phone number.
+</ParamField>
+
+<ParamField path="Primary" type="*bool">
+  Set whether this phone number should be the user's primary phone number.
+</ParamField>
+
+<ParamField path="ReservedForSecondFactor" type="*bool">
+  Set whether this phone number is reserved exclusively for use as a second factor.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/phonenumber"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    reserved := true
+
+    phone, err := phonenumber.Update(context.Background(), "idn_2abc123", &phonenumber.UpdateParams{
+        ReservedForSecondFactor: &reserved,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/phonenumber"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := phonenumber.NewClient(config)
+
+    reserved := true
+
+    phone, err := client.Update(context.Background(), "idn_2abc123", &phonenumber.UpdateParams{
+        ReservedForSecondFactor: &reserved,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Delete
+
+Deletes a phone number by ID.
+
+```
+func Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+func (c *Client) Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/phonenumber"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    deleted, err := phonenumber.Delete(context.Background(), "idn_2abc123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/phonenumber"
+    )
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := phonenumber.NewClient(config)
+
+    deleted, err := client.Delete(context.Background(), "idn_2abc123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Types
+
+### PhoneNumber
+
+<ResponseField name="id" type="string">
+  The unique identifier for this phone number resource.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  The object type. Always `"phone_number"`.
+</ResponseField>
+
+<ResponseField name="phone_number" type="string">
+  The phone number string in E.164 format.
+</ResponseField>
+
+<ResponseField name="reserved_for_second_factor" type="bool">
+  Whether this phone number is reserved exclusively for second-factor authentication.
+</ResponseField>
+
+<ResponseField name="default_second_factor" type="bool">
+  Whether this phone number is the default second factor for the user.
+</ResponseField>
+
+<ResponseField name="reserved" type="bool">
+  Whether the phone number is reserved and cannot be used for sign-up.
+</ResponseField>
+
+<ResponseField name="verification" type="Verification">
+  The current verification state of the phone number. `null` if no verification has been initiated.
+</ResponseField>
+
+<ResponseField name="linked_to" type="[]LinkedIdentification">
+  A list of identifications linked to this phone number.
+</ResponseField>
+
+<ResponseField name="backup_codes" type="[]string">
+  Backup codes associated with this phone number, if any.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) of when the phone number was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) of the last update.
+</ResponseField>

@@ -1,0 +1,157 @@
+---
+title: "Configuration"
+description: "Configure the Clerk Go SDK with API keys, custom HTTP clients, and advanced backend settings."
+---
+
+## Setting the API key
+
+The simplest way to configure the SDK is to call `clerk.SetKey` once at startup with your Clerk secret key. All subsequent API calls share this key automatically.
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2"
+
+func main() {
+    clerk.SetKey("sk_live_XXX")
+}
+```
+
+<Note>
+  Your secret key can be found in the [Clerk Dashboard](https://dashboard.clerk.com) under **API Keys**. Never expose secret keys in client-side code or commit them to source control.
+</Note>
+
+---
+
+## BackendConfig
+
+`BackendConfig` controls how the SDK communicates with the Clerk API. Pass it to `NewBackend` to create a custom backend.
+
+```go
+type BackendConfig struct {
+    HTTPClient           *http.Client
+    URL                  *string
+    Key                  *string
+    CustomRequestHeaders *CustomRequestHeaders
+}
+```
+
+<ParamField body="HTTPClient" type="*http.Client">
+  An HTTP client used for all API requests. When not set, the SDK uses a default client with a 5-second timeout.
+</ParamField>
+
+<ParamField body="URL" type="*string">
+  The base URL for API endpoints. Defaults to `https://api.clerk.com/v1`. Override this when using a local proxy or in tests.
+</ParamField>
+
+<ParamField body="Key" type="*string">
+  The Clerk secret key. When not set, the package-level key set by `clerk.SetKey` is used.
+</ParamField>
+
+<ParamField body="CustomRequestHeaders" type="*CustomRequestHeaders">
+  Optional custom headers added to every HTTP request the backend makes. The `Application` field is sent as `X-Clerk-Application`.
+</ParamField>
+
+---
+
+## NewBackend and SetBackend
+
+Use `NewBackend` to construct a backend from a `BackendConfig`, then register it with `SetBackend` so that all package-level API calls use it.
+
+```go
+import (
+    "net/http"
+    "github.com/clerk/clerk-sdk-go/v2"
+)
+
+func main() {
+    customURL := "https://api.clerk.com/v1"
+    customKey := "sk_live_XXX"
+
+    backend := clerk.NewBackend(&clerk.BackendConfig{
+        HTTPClient: &http.Client{Timeout: 10 * time.Second},
+        URL:        &customURL,
+        Key:        &customKey,
+        CustomRequestHeaders: &clerk.CustomRequestHeaders{
+            Application: "my-app/1.0",
+        },
+    })
+    clerk.SetBackend(backend)
+}
+```
+
+`GetBackend` returns the currently active backend, creating and caching a default one on first call if none has been set.
+
+---
+
+## Per-client configuration with ClientConfig
+
+When your application uses multiple Clerk API keys, create a `ClientConfig` for each and pass it to the resource client constructor. This avoids mutating the global backend.
+
+```go
+import (
+    "github.com/clerk/clerk-sdk-go/v2"
+    "github.com/clerk/clerk-sdk-go/v2/user"
+)
+
+func multiTenantHandler() {
+    tenantKey := "sk_live_TENANT_XXX"
+
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String(tenantKey)
+
+    userClient := user.NewClient(config)
+    // All calls through userClient use the tenant key.
+    u, err := userClient.Get(ctx, userID)
+    _ = u
+    _ = err
+}
+```
+
+`ClientConfig` embeds `BackendConfig`, so every `BackendConfig` field is available on it.
+
+---
+
+## Clock interface
+
+The `Clock` interface lets you replace the real system clock with a controlled time source. This is useful for testing time-sensitive flows (like JWT expiry) and for synchronising time across distributed servers.
+
+```go
+type Clock interface {
+    Now() time.Time
+}
+```
+
+The SDK ships a default implementation backed by `time.Now().UTC()`, returned by `clerk.NewClock()`. You can pass any `Clock` implementation wherever the SDK accepts one — for example via the middleware `Clock` option or `jwt.VerifyParams.Clock`.
+
+```go
+// A fixed clock for tests.
+type fixedClock struct{ t time.Time }
+func (c *fixedClock) Now() time.Time { return c.t }
+
+clock := &fixedClock{t: time.Now().Add(-5 * time.Minute)}
+```
+
+---
+
+## JoinPath utility
+
+`clerk.JoinPath` safely concatenates a base URL with one or more path segments, stripping duplicate slashes while preserving the protocol's `://` separator.
+
+```go
+path, err := clerk.JoinPath("https://api.clerk.com/v1", "users", userID)
+// path == "https://api.clerk.com/v1/users/<userID>"
+```
+
+This helper is used internally by the default backend and is exported for cases where you build your own backend or construct URLs manually.
+
+---
+
+## Helper pointer functions
+
+Many API parameter structs use pointer fields so that `nil` (omit the field) is distinguishable from a zero value. The SDK provides helpers for the most common types:
+
+```go
+clerk.String("hello")       // *string
+clerk.Bool(true)            // *bool
+clerk.Int64(10)             // *int64
+clerk.JSONRawMessage(data)  // *json.RawMessage
+```

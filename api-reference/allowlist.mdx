@@ -1,0 +1,299 @@
+---
+title: Allowlist Identifiers
+description: Use the Clerk Go SDK to manage the allowlist, restricting sign-ups to specific email addresses or domains.
+---
+
+The allowlist lets you restrict who can sign up for your application. When allowlisting is enabled in the Clerk Dashboard, only identifiers (email addresses or domain patterns) that appear on the allowlist are permitted to complete sign-up.
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/allowlistidentifier"
+```
+
+---
+
+## Operations
+
+### Create
+
+Adds a new identifier to the allowlist.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.AllowlistIdentifier, error)
+```
+
+**Client method**
+
+```go
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.AllowlistIdentifier, error)
+```
+
+#### CreateParams
+
+<ParamField path="Identifier" type="*string">
+  The email address or domain to add to the allowlist (e.g. `"alice@example.com"` or `"example.com"`).
+</ParamField>
+
+<ParamField path="Notify" type="*bool">
+  When `true`, sends an invitation email to the address if it is an email identifier. Has no effect for domain identifiers.
+</ParamField>
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    package main
+
+    import (
+      "context"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/allowlistidentifier"
+    )
+
+    func main() {
+      clerk.SetKey("sk_live_...")
+
+      identifier := "alice@example.com"
+      notify := true
+
+      entry, err := allowlistidentifier.Create(context.Background(), &allowlistidentifier.CreateParams{
+        Identifier: &identifier,
+        Notify:     &notify,
+      })
+      if err != nil {
+        panic(err)
+      }
+
+      _ = entry
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    package main
+
+    import (
+      "context"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/allowlistidentifier"
+    )
+
+    func main() {
+      config := &clerk.ClientConfig{}
+      config.Key = clerk.String("sk_live_...")
+      client := allowlistidentifier.NewClient(config)
+
+      identifier := "example.com"
+      notify := false
+
+      entry, err := client.Create(context.Background(), &allowlistidentifier.CreateParams{
+        Identifier: &identifier,
+        Notify:     &notify,
+      })
+      if err != nil {
+        panic(err)
+      }
+
+      _ = entry
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Delete
+
+Removes an identifier from the allowlist.
+
+```go
+func Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+```
+
+**Client method**
+
+```go
+func (c *Client) Delete(ctx context.Context, id string) (*clerk.DeletedResource, error)
+```
+
+| Parameter | Type     | Description                                      |
+|-----------|----------|--------------------------------------------------|
+| `id`      | `string` | The ID of the allowlist identifier to remove.    |
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    deleted, err := allowlistidentifier.Delete(context.Background(), "alid_abc123")
+    if err != nil {
+      panic(err)
+    }
+
+    fmt.Println(deleted.Deleted) // true
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := allowlistidentifier.NewClient(config)
+
+    deleted, err := client.Delete(context.Background(), "alid_abc123")
+    if err != nil {
+      panic(err)
+    }
+
+    fmt.Println(deleted.Deleted) // true
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### List
+
+Returns all identifiers currently on the allowlist.
+
+```go
+func List(ctx context.Context, params *ListParams) (*clerk.AllowlistIdentifierList, error)
+```
+
+**Client method**
+
+```go
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.AllowlistIdentifierList, error)
+```
+
+#### ListParams
+
+`ListParams` has no fields beyond the embedded `clerk.APIParams`. Pass an empty struct to retrieve all entries.
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    package main
+
+    import (
+      "context"
+      "fmt"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/allowlistidentifier"
+    )
+
+    func main() {
+      clerk.SetKey("sk_live_...")
+
+      list, err := allowlistidentifier.List(context.Background(), &allowlistidentifier.ListParams{})
+      if err != nil {
+        panic(err)
+      }
+
+      fmt.Printf("Total: %d\n", list.TotalCount)
+      for _, entry := range list.AllowlistIdentifiers {
+        fmt.Println(entry.Identifier, entry.IdentifierType)
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    package main
+
+    import (
+      "context"
+      "fmt"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/allowlistidentifier"
+    )
+
+    func main() {
+      config := &clerk.ClientConfig{}
+      config.Key = clerk.String("sk_live_...")
+      client := allowlistidentifier.NewClient(config)
+
+      list, err := client.List(context.Background(), &allowlistidentifier.ListParams{})
+      if err != nil {
+        panic(err)
+      }
+
+      fmt.Printf("Total: %d\n", list.TotalCount)
+      for _, entry := range list.AllowlistIdentifiers {
+        fmt.Println(entry.Identifier, entry.IdentifierType)
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Response types
+
+### AllowlistIdentifier
+
+Returned by `Create` and as elements in `List`.
+
+<ResponseField name="object" type="string">
+  Always `"allowlist_identifier"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Unique identifier for this allowlist entry.
+</ResponseField>
+
+<ResponseField name="identifier" type="string">
+  The email address or domain that is allowlisted.
+</ResponseField>
+
+<ResponseField name="identifier_type" type="string">
+  The type of identifier. Typically `"email_address"` or `"email_address_domain"`.
+</ResponseField>
+
+<ResponseField name="invitation_id" type="string">
+  The ID of the invitation associated with this entry, if one was created alongside it.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) when the entry was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) when the entry was last updated.
+</ResponseField>
+
+### AllowlistIdentifierList
+
+Returned by `List`.
+
+<ResponseField name="data" type="[]*AllowlistIdentifier">
+  All identifiers currently on the allowlist.
+</ResponseField>
+
+<ResponseField name="total_count" type="int64">
+  Total number of entries in the allowlist.
+</ResponseField>
+
+### DeletedResource
+
+Returned by `Delete`.
+
+<ResponseField name="id" type="string">
+  The ID of the deleted allowlist identifier.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  The object type that was deleted.
+</ResponseField>
+
+<ResponseField name="deleted" type="boolean">
+  `true` when the resource was successfully deleted.
+</ResponseField>

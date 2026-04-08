@@ -1,0 +1,190 @@
+---
+title: Sign-In Tokens
+description: Use the Clerk Go SDK to create and revoke sign-in tokens for passwordless, one-time authentication.
+---
+
+Sign-in tokens are short-lived, one-time-use tokens that allow a user to sign in without a password or other credential. They are useful for magic-link flows, onboarding emails, and admin-initiated sign-ins.
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/signintoken"
+```
+
+---
+
+## Operations
+
+### Create
+
+Creates a new sign-in token for the specified user.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.SignInToken, error)
+```
+
+**Client method**
+
+```go
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.SignInToken, error)
+```
+
+#### CreateParams
+
+<ParamField path="UserID" type="*string">
+  The ID of the user to create the sign-in token for.
+</ParamField>
+
+<ParamField path="ExpiresInSeconds" type="*int64">
+  How long the token is valid, in seconds. Defaults to the instance setting if not provided.
+</ParamField>
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    package main
+
+    import (
+      "context"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/signintoken"
+    )
+
+    func main() {
+      clerk.SetKey("sk_live_...")
+
+      userID := "user_abc123"
+      expiresIn := int64(3600)
+
+      token, err := signintoken.Create(context.Background(), &signintoken.CreateParams{
+        UserID:           &userID,
+        ExpiresInSeconds: &expiresIn,
+      })
+      if err != nil {
+        panic(err)
+      }
+
+      _ = token
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    package main
+
+    import (
+      "context"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/signintoken"
+    )
+
+    func main() {
+      config := &clerk.ClientConfig{}
+      config.Key = clerk.String("sk_live_...")
+      client := signintoken.NewClient(config)
+
+      userID := "user_abc123"
+      expiresIn := int64(3600)
+
+      token, err := client.Create(context.Background(), &signintoken.CreateParams{
+        UserID:           &userID,
+        ExpiresInSeconds: &expiresIn,
+      })
+      if err != nil {
+        panic(err)
+      }
+
+      _ = token
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Revoke
+
+Revokes a pending sign-in token so it can no longer be used.
+
+```go
+func Revoke(ctx context.Context, id string) (*clerk.SignInToken, error)
+```
+
+**Client method**
+
+```go
+func (c *Client) Revoke(ctx context.Context, id string) (*clerk.SignInToken, error)
+```
+
+| Parameter | Type     | Description                          |
+|-----------|----------|--------------------------------------|
+| `id`      | `string` | The ID of the sign-in token to revoke. |
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    token, err := signintoken.Revoke(context.Background(), "sit_abc123")
+    if err != nil {
+      panic(err)
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := signintoken.NewClient(config)
+
+    token, err := client.Revoke(context.Background(), "sit_abc123")
+    if err != nil {
+      panic(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Response types
+
+### SignInToken
+
+Returned by `Create` and `Revoke`.
+
+<ResponseField name="object" type="string">
+  Always `"sign_in_token"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Unique identifier for the sign-in token.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status of the token. One of `"pending"` or `"revoked"`.
+</ResponseField>
+
+<ResponseField name="user_id" type="string">
+  The ID of the user this token belongs to.
+</ResponseField>
+
+<ResponseField name="token" type="string">
+  The one-time token value. Only present immediately after creation.
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  A sign-in URL that embeds the token. Only present immediately after creation.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) when the token was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) when the token was last updated.
+</ResponseField>

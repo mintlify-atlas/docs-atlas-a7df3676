@@ -1,0 +1,459 @@
+---
+title: 'Organization roles'
+description: 'Create, retrieve, update, delete, and list roles. Assign and remove permissions from roles.'
+---
+
+Import the `organizationrole` package to manage organization roles.
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+```
+
+## Operations
+
+### Create
+
+Creates a new organization role.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.OrganizationRole, error)
+// Client method:
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.OrganizationRole, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    name := "Billing Manager"
+    key := "org:billing_manager"
+    description := "Can manage billing and invoices"
+    permissions := []string{"org:billing:read", "org:billing:write"}
+    role, err := organizationrole.Create(context.Background(), &organizationrole.CreateParams{
+        Name:        &name,
+        Key:         &key,
+        Description: &description,
+        Permissions: &permissions,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    client := organizationrole.NewClient(&clerk.ClientConfig{})
+
+    name := "Billing Manager"
+    key := "org:billing_manager"
+    description := "Can manage billing and invoices"
+    permissions := []string{"org:billing:read", "org:billing:write"}
+    role, err := client.Create(context.Background(), &organizationrole.CreateParams{
+        Name:        &name,
+        Key:         &key,
+        Description: &description,
+        Permissions: &permissions,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### CreateParams
+
+<ParamField path="Name" type="*string">
+  The display name of the role.
+</ParamField>
+
+<ParamField path="Key" type="*string">
+  The unique key used to identify the role in code (e.g., `"org:billing_manager"`).
+</ParamField>
+
+<ParamField path="Description" type="*string">
+  A human-readable description of the role.
+</ParamField>
+
+<ParamField path="Permissions" type="*[]string">
+  A list of permission keys to assign to the role.
+</ParamField>
+
+<ParamField path="IsManaged" type="*bool">
+  Whether this role is managed by Clerk.
+</ParamField>
+
+<ParamField path="IncludeInInitialRoleSet" type="*bool">
+  Whether this role is included in the initial set of roles for new organizations.
+</ParamField>
+
+---
+
+### Get
+
+Retrieves details for an organization role.
+
+```go
+func Get(ctx context.Context, roleID string) (*clerk.OrganizationRole, error)
+// Client method:
+func (c *Client) Get(ctx context.Context, roleID string) (*clerk.OrganizationRole, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    role, err := organizationrole.Get(context.Background(), "role_123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    client := organizationrole.NewClient(&clerk.ClientConfig{})
+    role, err := client.Get(context.Background(), "role_123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Update
+
+Updates an organization role.
+
+```go
+func Update(ctx context.Context, roleID string, params *UpdateParams) (*clerk.OrganizationRole, error)
+// Client method:
+func (c *Client) Update(ctx context.Context, roleID string, params *UpdateParams) (*clerk.OrganizationRole, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    name := "Senior Billing Manager"
+    role, err := organizationrole.Update(context.Background(), "role_123", &organizationrole.UpdateParams{
+        Name: &name,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    client := organizationrole.NewClient(&clerk.ClientConfig{})
+
+    name := "Senior Billing Manager"
+    role, err := client.Update(context.Background(), "role_123", &organizationrole.UpdateParams{
+        Name: &name,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### UpdateParams
+
+<ParamField path="Name" type="*string">
+  The updated display name of the role.
+</ParamField>
+
+<ParamField path="Key" type="*string">
+  The updated key for the role.
+</ParamField>
+
+<ParamField path="Description" type="*string">
+  The updated description of the role.
+</ParamField>
+
+<ParamField path="Permissions" type="*[]string">
+  The updated list of permission keys for the role. Replaces the existing list.
+</ParamField>
+
+---
+
+### Delete
+
+Removes an organization role.
+
+```go
+func Delete(ctx context.Context, roleID string) (*clerk.DeletedResource, error)
+// Client method:
+func (c *Client) Delete(ctx context.Context, roleID string) (*clerk.DeletedResource, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    deleted, err := organizationrole.Delete(context.Background(), "role_123")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    client := organizationrole.NewClient(&clerk.ClientConfig{})
+    deleted, err := client.Delete(context.Background(), "role_123")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### List
+
+Returns a list of organization roles.
+
+```go
+func List(ctx context.Context, params *ListParams) (*clerk.OrganizationRoleList, error)
+// Client method:
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.OrganizationRoleList, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    query := "billing"
+    list, err := organizationrole.List(context.Background(), &organizationrole.ListParams{
+        Query: &query,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    client := organizationrole.NewClient(&clerk.ClientConfig{})
+
+    query := "billing"
+    list, err := client.List(context.Background(), &organizationrole.ListParams{
+        Query: &query,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### ListParams
+
+<ParamField path="Limit" type="int64">
+  Maximum number of results to return. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="Offset" type="int64">
+  Number of results to skip. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="Query" type="*string">
+  Filters roles whose name or key matches the search query.
+</ParamField>
+
+<ParamField path="OrderBy" type="*string">
+  The field to order results by. Prefix with `-` for descending order.
+</ParamField>
+
+---
+
+### AssignPermission
+
+Assigns a permission to an organization role.
+
+```go
+func AssignPermission(ctx context.Context, roleID, permissionID string) (*clerk.OrganizationRole, error)
+// Client method:
+func (c *Client) AssignPermission(ctx context.Context, roleID, permissionID string) (*clerk.OrganizationRole, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    role, err := organizationrole.AssignPermission(context.Background(), "role_123", "perm_456")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    client := organizationrole.NewClient(&clerk.ClientConfig{})
+    role, err := client.AssignPermission(context.Background(), "role_123", "perm_456")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### RemovePermission
+
+Removes a permission from an organization role.
+
+```go
+func RemovePermission(ctx context.Context, roleID, permissionID string) (*clerk.OrganizationRole, error)
+// Client method:
+func (c *Client) RemovePermission(ctx context.Context, roleID, permissionID string) (*clerk.OrganizationRole, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    role, err := organizationrole.RemovePermission(context.Background(), "role_123", "perm_456")
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+    )
+
+    client := organizationrole.NewClient(&clerk.ClientConfig{})
+    role, err := client.RemovePermission(context.Background(), "role_123", "perm_456")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Response types
+
+### OrganizationRole
+
+<ResponseField name="object" type="string">
+  Always `"role"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  The unique identifier for the role.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The display name of the role.
+</ResponseField>
+
+<ResponseField name="key" type="string">
+  The unique key used to identify the role in code.
+</ResponseField>
+
+<ResponseField name="description" type="string | null">
+  A human-readable description of the role.
+</ResponseField>
+
+<ResponseField name="permissions" type="OrganizationPermission[]">
+  The list of permissions assigned to this role.
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">The permission's unique identifier.</ResponseField>
+    <ResponseField name="key" type="string">The permission's unique key.</ResponseField>
+    <ResponseField name="name" type="string">The permission's display name.</ResponseField>
+    <ResponseField name="description" type="string | null">A description of the permission.</ResponseField>
+    <ResponseField name="type" type="string">The permission type.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="is_creator_eligible" type="boolean">
+  Whether this role can be assigned to the creator of a new organization.
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  Unix timestamp (milliseconds) when the role was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="integer">
+  Unix timestamp (milliseconds) when the role was last updated.
+</ResponseField>
+
+### OrganizationRoleList
+
+<ResponseField name="data" type="OrganizationRole[]">
+  The list of organization roles.
+</ResponseField>
+
+<ResponseField name="total_count" type="integer">
+  The total number of roles matching the query.
+</ResponseField>

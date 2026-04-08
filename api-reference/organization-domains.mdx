@@ -1,0 +1,349 @@
+---
+title: 'Organization domains'
+description: 'Add, update, remove, and list domains for an organization.'
+---
+
+Import the `organizationdomain` package to manage organization domains.
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/organizationdomain"
+```
+
+## Operations
+
+### Create
+
+Adds a new domain to an organization.
+
+```go
+func Create(ctx context.Context, organizationID string, params *CreateParams) (*clerk.OrganizationDomain, error)
+// Client method:
+func (c *Client) Create(ctx context.Context, organizationID string, params *CreateParams) (*clerk.OrganizationDomain, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationdomain"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    name := "example.com"
+    enrollmentMode := "automatic_invitation"
+    domain, err := organizationdomain.Create(context.Background(), "org_123", &organizationdomain.CreateParams{
+        Name:           &name,
+        EnrollmentMode: &enrollmentMode,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationdomain"
+    )
+
+    client := organizationdomain.NewClient(&clerk.ClientConfig{})
+
+    name := "example.com"
+    enrollmentMode := "automatic_invitation"
+    domain, err := client.Create(context.Background(), "org_123", &organizationdomain.CreateParams{
+        Name:           &name,
+        EnrollmentMode: &enrollmentMode,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### CreateParams
+
+<ParamField path="Name" type="*string">
+  The domain name (e.g., `"example.com"`).
+</ParamField>
+
+<ParamField path="EnrollmentMode" type="*string">
+  How users with matching email addresses are enrolled. One of `"automatic_invitation"`, `"automatic_suggestion"`, or `"manual_invitation"`.
+</ParamField>
+
+<ParamField path="Verified" type="*bool">
+  Whether the domain is marked as verified. Only available for certain account types.
+</ParamField>
+
+---
+
+### Update
+
+Updates an organization domain's enrollment mode or verification status.
+
+```go
+func Update(ctx context.Context, params *UpdateParams) (*clerk.OrganizationDomain, error)
+// Client method:
+func (c *Client) Update(ctx context.Context, params *UpdateParams) (*clerk.OrganizationDomain, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationdomain"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    mode := "manual_invitation"
+    domain, err := organizationdomain.Update(context.Background(), &organizationdomain.UpdateParams{
+        OrganizationID: "org_123",
+        DomainID:       "orgdomain_456",
+        EnrollmentMode: &mode,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationdomain"
+    )
+
+    client := organizationdomain.NewClient(&clerk.ClientConfig{})
+
+    mode := "manual_invitation"
+    domain, err := client.Update(context.Background(), &organizationdomain.UpdateParams{
+        OrganizationID: "org_123",
+        DomainID:       "orgdomain_456",
+        EnrollmentMode: &mode,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### UpdateParams
+
+<ParamField path="OrganizationID" type="string" required>
+  The ID of the organization.
+</ParamField>
+
+<ParamField path="DomainID" type="string" required>
+  The ID of the domain to update.
+</ParamField>
+
+<ParamField path="EnrollmentMode" type="*string">
+  The updated enrollment mode. One of `"automatic_invitation"`, `"automatic_suggestion"`, or `"manual_invitation"`.
+</ParamField>
+
+<ParamField path="Verified" type="*bool">
+  The updated verification status of the domain.
+</ParamField>
+
+---
+
+### Delete
+
+Removes a domain from an organization.
+
+```go
+func Delete(ctx context.Context, params *DeleteParams) (*clerk.DeletedResource, error)
+// Client method:
+func (c *Client) Delete(ctx context.Context, params *DeleteParams) (*clerk.DeletedResource, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationdomain"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    deleted, err := organizationdomain.Delete(context.Background(), &organizationdomain.DeleteParams{
+        OrganizationID: "org_123",
+        DomainID:       "orgdomain_456",
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationdomain"
+    )
+
+    client := organizationdomain.NewClient(&clerk.ClientConfig{})
+
+    deleted, err := client.Delete(context.Background(), &organizationdomain.DeleteParams{
+        OrganizationID: "org_123",
+        DomainID:       "orgdomain_456",
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### DeleteParams
+
+<ParamField path="OrganizationID" type="string" required>
+  The ID of the organization.
+</ParamField>
+
+<ParamField path="DomainID" type="string" required>
+  The ID of the domain to remove.
+</ParamField>
+
+---
+
+### List
+
+Returns a list of domains for an organization.
+
+```go
+func List(ctx context.Context, organizationID string, params *ListParams) (*clerk.OrganizationDomainList, error)
+// Client method:
+func (c *Client) List(ctx context.Context, organizationID string, params *ListParams) (*clerk.OrganizationDomainList, error)
+```
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationdomain"
+    )
+
+    clerk.SetKey("sk_live_...")
+
+    verified := true
+    list, err := organizationdomain.List(context.Background(), "org_123", &organizationdomain.ListParams{
+        Verified: &verified,
+    })
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    import (
+        "context"
+
+        "github.com/clerk/clerk-sdk-go/v2"
+        "github.com/clerk/clerk-sdk-go/v2/organizationdomain"
+    )
+
+    client := organizationdomain.NewClient(&clerk.ClientConfig{})
+
+    verified := true
+    list, err := client.List(context.Background(), "org_123", &organizationdomain.ListParams{
+        Verified: &verified,
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### ListParams
+
+<ParamField path="Limit" type="int64">
+  Maximum number of results to return. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="Offset" type="int64">
+  Number of results to skip. Inherited from `clerk.ListParams`.
+</ParamField>
+
+<ParamField path="Verified" type="*bool">
+  When set, filters domains by verification status.
+</ParamField>
+
+<ParamField path="EnrollmentModes" type="*[]string">
+  Filters domains by enrollment mode. One or more of `"automatic_invitation"`, `"automatic_suggestion"`, `"manual_invitation"`.
+</ParamField>
+
+---
+
+## Response types
+
+### OrganizationDomain
+
+<ResponseField name="object" type="string">
+  Always `"organization_domain"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  The unique identifier for the domain.
+</ResponseField>
+
+<ResponseField name="organization_id" type="string">
+  The ID of the organization this domain belongs to.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The domain name (e.g., `"example.com"`).
+</ResponseField>
+
+<ResponseField name="enrollment_mode" type="string">
+  How users with matching email addresses are enrolled. One of `"automatic_invitation"`, `"automatic_suggestion"`, or `"manual_invitation"`.
+</ResponseField>
+
+<ResponseField name="affiliation_email_address" type="string | null">
+  The email address used for domain affiliation verification.
+</ResponseField>
+
+<ResponseField name="verification" type="object | null">
+  The verification status of the domain.
+
+  <Expandable title="properties">
+    <ResponseField name="status" type="string">
+      The current verification status (e.g., `"verified"`, `"unverified"`).
+    </ResponseField>
+    <ResponseField name="strategy" type="string">
+      The verification strategy used.
+    </ResponseField>
+    <ResponseField name="attempts" type="integer">
+      The number of verification attempts made.
+    </ResponseField>
+    <ResponseField name="expire_at" type="integer | null">
+      Unix timestamp (milliseconds) when the verification attempt expires.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total_pending_invitations" type="integer">
+  The number of pending invitations for users with an email matching this domain.
+</ResponseField>
+
+<ResponseField name="total_pending_suggestions" type="integer">
+  The number of pending suggestions for users with an email matching this domain.
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  Unix timestamp (milliseconds) when the domain was added.
+</ResponseField>
+
+<ResponseField name="updated_at" type="integer">
+  Unix timestamp (milliseconds) when the domain was last updated.
+</ResponseField>
+
+### OrganizationDomainList
+
+<ResponseField name="data" type="OrganizationDomain[]">
+  The list of organization domains.
+</ResponseField>
+
+<ResponseField name="total_count" type="integer">
+  The total number of domains matching the query.
+</ResponseField>

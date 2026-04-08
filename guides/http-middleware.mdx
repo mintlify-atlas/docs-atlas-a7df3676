@@ -1,0 +1,298 @@
+---
+title: "HTTP middleware"
+description: "Add Clerk authentication to any Go HTTP server using the built-in middleware functions."
+---
+
+The `github.com/clerk/clerk-sdk-go/v2/http` package provides two middleware functions that verify Clerk session tokens from the `Authorization` request header and make the parsed claims available to downstream handlers.
+
+---
+
+## Middleware overview
+
+Both middleware functions use Bearer token authentication. The token must arrive in the request header in the following format:
+
+```
+Authorization: Bearer <session-token>
+```
+
+The token is decoded, verified against Clerk's JSON Web Key Set, and — if valid — the `*clerk.SessionClaims` are written into the request context.
+
+| Function | Behavior on missing/invalid token |
+|---|---|
+| `WithHeaderAuthorization` | Calls the next handler without session claims in context |
+| `RequireHeaderAuthorization` | Responds with **403 Forbidden** and stops the chain |
+
+---
+
+## WithHeaderAuthorization
+
+`WithHeaderAuthorization` is the permissive middleware. When a valid token is present, session claims are added to the context. When there is no token, or it fails verification, the request continues to the next handler — with no claims in context. This makes it suitable for routes that are publicly accessible but can also tailor their response to authenticated users.
+
+```go
+import (
+    "fmt"
+    "net/http"
+
+    "github.com/clerk/clerk-sdk-go/v2"
+    clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
+)
+
+func main() {
+    clerk.SetKey("sk_live_XXX")
+
+    mux := http.NewServeMux()
+    mux.HandleFunc("/", publicRoute)
+
+    protectedHandler := http.HandlerFunc(protectedRoute)
+    mux.Handle(
+        "/protected",
+        clerkhttp.WithHeaderAuthorization()(protectedHandler),
+    )
+
+    http.ListenAndServe(":3000", mux)
+}
+
+func publicRoute(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte(`{"access": "public"}`))
+}
+
+func protectedRoute(w http.ResponseWriter, r *http.Request) {
+    claims, ok := clerk.SessionClaimsFromContext(r.Context())
+    if !ok {
+        w.WriteHeader(http.StatusUnauthorized)
+        w.Write([]byte(`{"access": "unauthorized"}`))
+        return
+    }
+    fmt.Fprintf(w, `{"user_id": "%s"}`, claims.Subject)
+}
+```
+
+## RequireHeaderAuthorization
+
+`RequireHeaderAuthorization` wraps `WithHeaderAuthorization` and adds a guard: if the session claims are absent from the context after the token check, it responds with **HTTP 403 Forbidden** before the inner handler runs.
+
+```go
+mux.Handle(
+    "/dashboard",
+    clerkhttp.RequireHeaderAuthorization()(http.HandlerFunc(dashboardRoute)),
+)
+```
+
+---
+
+## Reading session claims from context
+
+After the middleware runs, use `clerk.SessionClaimsFromContext` to retrieve the verified claims:
+
+```go
+func myHandler(w http.ResponseWriter, r *http.Request) {
+    claims, ok := clerk.SessionClaimsFromContext(r.Context())
+    if !ok || claims == nil {
+        // No valid session
+        return
+    }
+    // claims.Subject    — the user's Clerk ID
+    // claims.SessionID  — the session ID
+    fmt.Println(claims.Subject)
+}
+```
+
+---
+
+## Authorization options
+
+Both middleware functions accept variadic `AuthorizationOption` arguments to customise their behaviour.
+
+### AuthorizationJWTExtractor
+
+Provide a custom function to extract the JWT string from the request. Useful when the token arrives somewhere other than the `Authorization` header.
+
+```go
+clerkhttp.WithHeaderAuthorization(
+    clerkhttp.AuthorizationJWTExtractor(func(r *http.Request) string {
+        return r.URL.Query().Get("__session")
+    }),
+)
+```
+
+### AuthorizationFailureHandler
+
+Replace the default 401 response with a custom handler when authorization fails.
+
+```go
+clerkhttp.WithHeaderAuthorization(
+    clerkhttp.AuthorizationFailureHandler(
+        http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            w.Header().Set("Content-Type", "application/json")
+            w.WriteHeader(http.StatusUnauthorized)
+            w.Write([]byte(`{"error":"not authenticated"}`))
+        }),
+    ),
+)
+```
+
+### AuthorizedParty and AuthorizedPartyMatches
+
+Validate the `azp` (authorized party) claim. Use `AuthorizedPartyMatches` to allow a fixed set of values, or `AuthorizedParty` for arbitrary logic.
+
+```go
+// Allow only requests from these two origins.
+clerkhttp.WithHeaderAuthorization(
+    clerkhttp.AuthorizedPartyMatches("https://app.example.com", "https://staging.example.com"),
+)
+
+// Custom validation function.
+clerkhttp.WithHeaderAuthorization(
+    clerkhttp.AuthorizedParty(func(azp string) bool {
+        return strings.HasSuffix(azp, ".example.com")
+    }),
+)
+```
+
+### Clock
+
+Supply a `clerk.Clock` implementation to control the time source used during JWT verification. Useful for testing or for eliminating clock skew across servers.
+
+```go
+clerkhttp.WithHeaderAuthorization(
+    clerkhttp.Clock(myCustomClock),
+)
+```
+
+### CustomClaimsConstructor
+
+Provide a constructor function that returns a pointer to a struct describing custom JWT claims. The populated struct is available in `SessionClaims.Custom`.
+
+```go
+type MyCustomClaims struct {
+    Plan string `json:"plan"`
+}
+
+clerkhttp.WithHeaderAuthorization(
+    clerkhttp.CustomClaimsConstructor(func(_ context.Context) any {
+        return &MyCustomClaims{}
+    }),
+)
+
+// In the handler:
+func myHandler(w http.ResponseWriter, r *http.Request) {
+    claims, _ := clerk.SessionClaimsFromContext(r.Context())
+    custom, ok := claims.Custom.(*MyCustomClaims)
+    if ok {
+        fmt.Println(custom.Plan)
+    }
+}
+```
+
+### Leeway
+
+Accept tokens that are slightly expired, to defend against clock skew between your servers and Clerk.
+
+```go
+clerkhttp.WithHeaderAuthorization(
+    clerkhttp.Leeway(5 * time.Second),
+)
+```
+
+### ProxyURL
+
+Set the URL of a server that proxies the Clerk Frontend API. The middleware will validate the JWT `iss` claim against this URL instead of the default Clerk issuer.
+
+```go
+clerkhttp.WithHeaderAuthorization(
+    clerkhttp.ProxyURL("https://my-proxy.example.com"),
+)
+```
+
+### Satellite
+
+Mark the authorization as happening on a satellite domain. When set, issuer validation is skipped.
+
+```go
+clerkhttp.WithHeaderAuthorization(
+    clerkhttp.Satellite(true),
+)
+```
+
+### JSONWebKey
+
+Provide a static RSA public key (PEM or bare base64) to verify JWTs without fetching Clerk's JWKS endpoint. When this option is set, no network request for JWKs is made.
+
+```go
+clerkhttp.WithHeaderAuthorization(
+    clerkhttp.JSONWebKey("MIIBIjANBgkqhkiG9w0BAQEFAAOC..."),
+)
+```
+
+<Warning>
+  When using a static key you are responsible for rotating it when Clerk rolls signing keys. Prefer JWKS-based verification in production unless you have a specific reason to use a static key.
+</Warning>
+
+### JWKSClient
+
+Supply a custom `*jwks.Client` for fetching the JSON Web Key Set. The JWKS client is ignored when `JSONWebKey` is also provided.
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/jwks"
+
+myJWKSClient := &jwks.Client{Backend: myCustomBackend}
+
+clerkhttp.WithHeaderAuthorization(
+    clerkhttp.JWKSClient(myJWKSClient),
+)
+```
+
+---
+
+## NeedsSessionReverification middleware
+
+`NeedsSessionReverification` enforces step-up authentication. It must be chained **after** `WithHeaderAuthorization` or `RequireHeaderAuthorization` so that session claims are already in context.
+
+If the session does not satisfy the given policy, the middleware responds with **HTTP 403** and a JSON body describing the reverification requirement. Otherwise, the request passes through.
+
+```go
+import (
+    "github.com/clerk/clerk-sdk-go/v2"
+    clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
+)
+
+sensitiveHandler := http.HandlerFunc(sensitiveRoute)
+
+mux.Handle(
+    "/transfer",
+    clerkhttp.RequireHeaderAuthorization()(
+        clerkhttp.NeedsSessionReverification(clerk.SessionReverificationStrict)(
+            sensitiveHandler,
+        ),
+    ),
+)
+```
+
+Predefined policies:
+
+| Policy | Level | AfterMinutes |
+|---|---|---|
+| `clerk.SessionReverificationStrictMFA` | `multi_factor` | 10 |
+| `clerk.SessionReverificationStrict` | `second_factor` | 10 |
+| `clerk.SessionReverificationModerate` | `second_factor` | 60 |
+| `clerk.SessionReverificationLax` | `second_factor` | 1440 |
+
+When reverification is needed, the middleware writes:
+
+```json
+{
+  "clerk_error": {
+    "type": "forbidden",
+    "reason": "reverification-error",
+    "metadata": {
+      "reverification": { "level": "second_factor", "after_minutes": 10 }
+    }
+  }
+}
+```
+
+---
+
+## JWK caching
+
+The middleware caches fetched JSON Web Keys in memory for **one hour**. After expiry, the next request triggers a fresh JWKS fetch. The cache is a package-level singleton, so it is shared across all uses of the default backend. Use per-client configuration (and the `JWKSClient` option) if you operate multiple Clerk API keys in the same process.

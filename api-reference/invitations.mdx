@@ -1,0 +1,445 @@
+---
+title: Invitations
+description: Use the Clerk Go SDK to create, bulk-create, list, and revoke invitations.
+---
+
+Invitations allow you to invite users to your application by email. You can send individual invitations or create them in bulk. Each invitation generates a unique sign-up URL that pre-fills the recipient's email address.
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/invitation"
+```
+
+---
+
+## Operations
+
+### Create
+
+Creates a single invitation and optionally sends a notification email to the recipient.
+
+```go
+func Create(ctx context.Context, params *CreateParams) (*clerk.Invitation, error)
+```
+
+**Client method**
+
+```go
+func (c *Client) Create(ctx context.Context, params *CreateParams) (*clerk.Invitation, error)
+```
+
+#### CreateParams
+
+<ParamField path="EmailAddress" type="string" required>
+  The email address to invite.
+</ParamField>
+
+<ParamField path="PublicMetadata" type="*json.RawMessage">
+  Arbitrary metadata to attach to the invitation. Becomes the invited user's `public_metadata` upon sign-up.
+</ParamField>
+
+<ParamField path="RedirectURL" type="*string">
+  The URL the user will be redirected to after accepting the invitation.
+</ParamField>
+
+<ParamField path="Notify" type="*bool">
+  Whether to send an invitation email to the recipient. Defaults to `true`.
+</ParamField>
+
+<ParamField path="IgnoreExisting" type="*bool">
+  When `true`, creating an invitation for an already-registered email will not return an error.
+</ParamField>
+
+<ParamField path="ExpiresInDays" type="*int64">
+  Number of days until the invitation expires.
+</ParamField>
+
+<ParamField path="TemplateSlug" type="*string">
+  Slug of the email template to use for the invitation email. If omitted, the default invitation template is used.
+</ParamField>
+
+<Note>
+  `TemplateSlug` refers to a custom email template configured in the Clerk Dashboard. Leave it unset to use the built-in invitation template.
+</Note>
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    package main
+
+    import (
+      "context"
+      "encoding/json"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/invitation"
+    )
+
+    func main() {
+      clerk.SetKey("sk_live_...")
+
+      meta, _ := json.Marshal(map[string]string{"plan": "pro"})
+      raw := json.RawMessage(meta)
+      redirectURL := "https://example.com/welcome"
+      notify := true
+
+      inv, err := invitation.Create(context.Background(), &invitation.CreateParams{
+        EmailAddress:   "alice@example.com",
+        PublicMetadata: &raw,
+        RedirectURL:    &redirectURL,
+        Notify:         &notify,
+      })
+      if err != nil {
+        panic(err)
+      }
+
+      _ = inv
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    package main
+
+    import (
+      "context"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/invitation"
+    )
+
+    func main() {
+      config := &clerk.ClientConfig{}
+      config.Key = clerk.String("sk_live_...")
+      client := invitation.NewClient(config)
+
+      notify := true
+
+      inv, err := client.Create(context.Background(), &invitation.CreateParams{
+        EmailAddress: "alice@example.com",
+        Notify:       &notify,
+      })
+      if err != nil {
+        panic(err)
+      }
+
+      _ = inv
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### BulkCreate
+
+Creates multiple invitations in a single request. Each element in `Invitations` accepts the same fields as `CreateParams`.
+
+```go
+func BulkCreate(ctx context.Context, params *BulkCreateParams) (*clerk.Invitations, error)
+```
+
+**Client method**
+
+```go
+func (c *Client) BulkCreate(ctx context.Context, params *BulkCreateParams) (*clerk.Invitations, error)
+```
+
+#### BulkCreateParams
+
+<ParamField path="Invitations" type="[]*CreateParams" required>
+  A slice of `CreateParams` objects, one per invitation to create.
+</ParamField>
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    package main
+
+    import (
+      "context"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/invitation"
+    )
+
+    func main() {
+      clerk.SetKey("sk_live_...")
+
+      result, err := invitation.BulkCreate(context.Background(), &invitation.BulkCreateParams{
+        Invitations: []*invitation.CreateParams{
+          {EmailAddress: "alice@example.com"},
+          {EmailAddress: "bob@example.com"},
+        },
+      })
+      if err != nil {
+        panic(err)
+      }
+
+      _ = result.Invitations
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    package main
+
+    import (
+      "context"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/invitation"
+    )
+
+    func main() {
+      config := &clerk.ClientConfig{}
+      config.Key = clerk.String("sk_live_...")
+      client := invitation.NewClient(config)
+
+      result, err := client.BulkCreate(context.Background(), &invitation.BulkCreateParams{
+        Invitations: []*invitation.CreateParams{
+          {EmailAddress: "alice@example.com"},
+          {EmailAddress: "bob@example.com"},
+        },
+      })
+      if err != nil {
+        panic(err)
+      }
+
+      _ = result.Invitations
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### List
+
+Returns a paginated list of invitations, with optional filtering.
+
+```go
+func List(ctx context.Context, params *ListParams) (*clerk.InvitationList, error)
+```
+
+**Client method**
+
+```go
+func (c *Client) List(ctx context.Context, params *ListParams) (*clerk.InvitationList, error)
+```
+
+#### ListParams
+
+<ParamField path="Limit" type="*int64">
+  Maximum number of results to return per page.
+</ParamField>
+
+<ParamField path="Offset" type="*int64">
+  Number of results to skip before returning results.
+</ParamField>
+
+<ParamField path="OrderBy" type="*string">
+  Field to order results by. Prefix with `-` for descending order (e.g. `"-created_at"`).
+</ParamField>
+
+<ParamField path="Query" type="*string">
+  Filters invitations whose email address contains the provided string.
+</ParamField>
+
+<ParamField path="Statuses" type="[]string">
+  Filters by status. Accepted values: `"pending"`, `"accepted"`, `"revoked"`.
+</ParamField>
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    package main
+
+    import (
+      "context"
+      "fmt"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/invitation"
+    )
+
+    func main() {
+      clerk.SetKey("sk_live_...")
+
+      limit := int64(20)
+      offset := int64(0)
+
+      list, err := invitation.List(context.Background(), &invitation.ListParams{
+        Statuses: []string{"pending"},
+        ListParams: clerk.ListParams{
+          Limit:  &limit,
+          Offset: &offset,
+        },
+      })
+      if err != nil {
+        panic(err)
+      }
+
+      fmt.Printf("Total: %d\n", list.TotalCount)
+      for _, inv := range list.Invitations {
+        fmt.Println(inv.EmailAddress, inv.Status)
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    package main
+
+    import (
+      "context"
+      "fmt"
+
+      "github.com/clerk/clerk-sdk-go/v2"
+      "github.com/clerk/clerk-sdk-go/v2/invitation"
+    )
+
+    func main() {
+      config := &clerk.ClientConfig{}
+      config.Key = clerk.String("sk_live_...")
+      client := invitation.NewClient(config)
+
+      list, err := client.List(context.Background(), &invitation.ListParams{
+        Statuses: []string{"pending"},
+      })
+      if err != nil {
+        panic(err)
+      }
+
+      fmt.Printf("Total: %d\n", list.TotalCount)
+      for _, inv := range list.Invitations {
+        fmt.Println(inv.EmailAddress, inv.Status)
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Revoke
+
+Revokes a pending invitation so it can no longer be accepted.
+
+```go
+func Revoke(ctx context.Context, id string) (*clerk.Invitation, error)
+```
+
+**Client method**
+
+```go
+func (c *Client) Revoke(ctx context.Context, id string) (*clerk.Invitation, error)
+```
+
+| Parameter | Type     | Description                       |
+|-----------|----------|-----------------------------------|
+| `id`      | `string` | The ID of the invitation to revoke. |
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    inv, err := invitation.Revoke(context.Background(), "inv_abc123")
+    if err != nil {
+      panic(err)
+    }
+
+    fmt.Println(inv.Status) // "revoked"
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := invitation.NewClient(config)
+
+    inv, err := client.Revoke(context.Background(), "inv_abc123")
+    if err != nil {
+      panic(err)
+    }
+
+    fmt.Println(inv.Status) // "revoked"
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Response types
+
+### Invitation
+
+Returned by `Create`, `Revoke`, and individual elements in `List` and `BulkCreate`.
+
+<ResponseField name="object" type="string">
+  Always `"invitation"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Unique identifier for the invitation.
+</ResponseField>
+
+<ResponseField name="email_address" type="string">
+  The email address this invitation was sent to.
+</ResponseField>
+
+<ResponseField name="public_metadata" type="object">
+  Arbitrary JSON metadata attached to the invitation.
+</ResponseField>
+
+<ResponseField name="revoked" type="boolean">
+  `true` if the invitation has been revoked.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status. One of `"pending"`, `"accepted"`, or `"revoked"`.
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  The unique sign-up URL for this invitation.
+</ResponseField>
+
+<ResponseField name="expires_at" type="int64">
+  Unix timestamp (milliseconds) when the invitation expires. `null` if it does not expire.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) when the invitation was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) when the invitation was last updated.
+</ResponseField>
+
+### InvitationList
+
+Returned by `List`.
+
+<ResponseField name="data" type="[]*Invitation">
+  The list of invitations for the current page.
+</ResponseField>
+
+<ResponseField name="total_count" type="int64">
+  Total number of invitations matching the query, across all pages.
+</ResponseField>
+
+### Invitations
+
+Returned by `BulkCreate`.
+
+<ResponseField name="data" type="[]*Invitation">
+  The invitations that were created.
+</ResponseField>

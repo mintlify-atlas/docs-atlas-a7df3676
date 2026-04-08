@@ -1,0 +1,171 @@
+---
+title: "Webhooks"
+description: "Manage your Clerk instance's Svix webhook integration."
+---
+
+Clerk uses [Svix](https://svix.com) to deliver webhook events — notifications about changes in your instance such as user creation, session starts, and organization updates. The `svixwebhook` package lets you create, delete, and regenerate the Svix app associated with your Clerk instance entirely from Go code.
+
+<Note>
+  This package manages the **webhook delivery infrastructure** (the Svix app and
+  its dashboard URL). Subscribing to specific event types and receiving payloads
+  is configured through the Clerk Dashboard or the Svix dashboard URL returned
+  by `RefreshURL`.
+</Note>
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/svixwebhook"
+```
+
+---
+
+## Operations
+
+### `Create`
+
+Creates a Svix app for the Clerk instance. Returns a dashboard URL you can
+redirect users to for configuring webhook endpoints and subscriptions.
+
+```go
+func Create(ctx context.Context) (*clerk.SvixWebhook, error)
+```
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client (global backend)">
+    ```go
+    clerk.SetKey("sk_live_...")
+
+    webhook, err := svixwebhook.Create(context.Background())
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("Svix dashboard:", webhook.SvixURL)
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+
+    client := svixwebhook.NewClient(config)
+
+    webhook, err := client.Create(context.Background())
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("Svix dashboard:", webhook.SvixURL)
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### `Delete`
+
+Deletes the Svix app and all associated webhook subscriptions for the instance.
+
+```go
+func Delete(ctx context.Context) (*clerk.SvixWebhook, error)
+```
+
+<Warning>
+  Deleting the Svix app removes **all** webhook endpoints and subscriptions
+  permanently. This cannot be undone without re-creating the app.
+</Warning>
+
+#### Example
+
+```go
+clerk.SetKey("sk_live_...")
+
+_, err := svixwebhook.Delete(context.Background())
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+---
+
+### `RefreshURL`
+
+Generates a new, short-lived Svix dashboard URL. Use this when an existing URL
+has expired or when you want to provide a fresh link to a user.
+
+```go
+func RefreshURL(ctx context.Context) (*clerk.SvixWebhook, error)
+```
+
+#### Example
+
+<Tabs>
+  <Tab title="Without client (global backend)">
+    ```go
+    clerk.SetKey("sk_live_...")
+
+    webhook, err := svixwebhook.RefreshURL(context.Background())
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Redirect the user to the Svix dashboard
+    http.Redirect(w, r, webhook.SvixURL, http.StatusTemporaryRedirect)
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+
+    client := svixwebhook.NewClient(config)
+
+    webhook, err := client.RefreshURL(context.Background())
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    http.Redirect(w, r, webhook.SvixURL, http.StatusTemporaryRedirect)
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Types
+
+### `clerk.SvixWebhook`
+
+Returned by all three operations.
+
+<ResponseField name="svix_url" type="string">
+  The Svix dashboard URL. This URL is short-lived; call `RefreshURL` to
+  generate a new one when it expires.
+</ResponseField>
+
+---
+
+## Typical lifecycle
+
+```go
+// 1. Create the Svix app once when setting up the instance
+webhook, err := svixwebhook.Create(ctx)
+
+// 2. Later, whenever a user needs access to the dashboard, generate a fresh URL
+webhook, err = svixwebhook.RefreshURL(ctx)
+redirect(webhook.SvixURL)
+
+// 3. If you need to reset all webhook subscriptions
+_, err = svixwebhook.Delete(ctx)
+
+// 4. Re-create to start fresh
+webhook, err = svixwebhook.Create(ctx)
+```
+
+<Tip>
+  Dashboard URLs returned by Svix expire quickly. Always call `RefreshURL`
+  immediately before redirecting a user — never cache the URL between requests.
+</Tip>

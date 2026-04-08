@@ -1,0 +1,302 @@
+---
+title: "Billing"
+description: "List billing plans, manage subscription items, and extend free trials in your Clerk instance."
+---
+
+The `billing` package provides operations for managing billing plans and subscription items for your Clerk instance. Use it to inspect available plans, manage active subscriptions, and extend free trial periods.
+
+## Import
+
+```go
+import "github.com/clerk/clerk-sdk-go/v2/billing"
+```
+
+---
+
+## Operations
+
+### `ListPlans`
+
+Returns a list of available billing plans.
+
+```go
+func ListPlans(ctx context.Context, params *ListPlansParams) (*clerk.PlanList, error)
+func (c *Client) ListPlans(ctx context.Context, params *ListPlansParams) (*clerk.PlanList, error)
+```
+
+#### ListPlansParams
+
+<ParamField path="Limit" type="*int64">
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="Offset" type="*int64">
+  Number of results to skip.
+</ParamField>
+
+<ParamField path="PayerType" type="*string">
+  Filter plans by payer type. Common values: `"user"`, `"organization"`.
+</ParamField>
+
+<Tabs>
+  <Tab title="Without client">
+    ```go
+    clerk.SetKey("sk_live_...")
+
+    plans, err := billing.ListPlans(context.Background(), &billing.ListPlansParams{
+        PayerType: clerk.String("user"),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, plan := range plans.Data {
+        fmt.Printf("%s: %s\n", plan.Name, plan.Fee.AmountFormatted)
+    }
+    ```
+  </Tab>
+  <Tab title="With client">
+    ```go
+    config := &clerk.ClientConfig{}
+    config.Key = clerk.String("sk_live_...")
+    client := billing.NewClient(config)
+
+    plans, err := client.ListPlans(context.Background(), &billing.ListPlansParams{})
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### `ListSubscriptionItems`
+
+Returns a paginated list of subscription items across your instance.
+
+```go
+func ListSubscriptionItems(ctx context.Context, params *ListSubscriptionItemsParams) (*clerk.SubscriptionItemList, error)
+func (c *Client) ListSubscriptionItems(ctx context.Context, params *ListSubscriptionItemsParams) (*clerk.SubscriptionItemList, error)
+```
+
+#### ListSubscriptionItemsParams
+
+<ParamField path="Limit" type="*int64">
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="Offset" type="*int64">
+  Number of results to skip.
+</ParamField>
+
+<ParamField path="Status" type="*string">
+  Filter by subscription status (e.g. `"active"`, `"canceled"`).
+</ParamField>
+
+<ParamField path="PayerType" type="*string">
+  Filter by payer type (`"user"` or `"organization"`).
+</ParamField>
+
+<ParamField path="PlanID" type="*string">
+  Filter subscriptions for a specific plan.
+</ParamField>
+
+<ParamField path="IncludeFree" type="*bool">
+  When `true`, includes subscriptions to free plans.
+</ParamField>
+
+<ParamField path="Query" type="*string">
+  Search query matched against payer details.
+</ParamField>
+
+<ParamField path="UserID" type="*string">
+  Filter subscriptions for a specific user.
+</ParamField>
+
+<ParamField path="OrganizationID" type="*string">
+  Filter subscriptions for a specific organization.
+</ParamField>
+
+```go
+items, err := billing.ListSubscriptionItems(context.Background(), &billing.ListSubscriptionItemsParams{
+    Status:    clerk.String("active"),
+    UserID:    clerk.String("user_abc123"),
+})
+if err != nil {
+    log.Fatal(err)
+}
+for _, item := range items.Data {
+    fmt.Printf("Plan: %s, Status: %s\n", item.Plan.Name, item.Status)
+}
+```
+
+---
+
+### `CancelSubscriptionItem`
+
+Cancels a subscription item. By default, the subscription remains active until the end of the billing period.
+
+```go
+func CancelSubscriptionItem(ctx context.Context, subscriptionItemID string, params *CancelSubscriptionItemParams) (*clerk.SubscriptionItem, error)
+func (c *Client) CancelSubscriptionItem(ctx context.Context, subscriptionItemID string, params *CancelSubscriptionItemParams) (*clerk.SubscriptionItem, error)
+```
+
+#### CancelSubscriptionItemParams
+
+<ParamField path="EndNow" type="*bool">
+  When `true`, the subscription is canceled immediately instead of at the end of the billing period.
+</ParamField>
+
+```go
+item, err := billing.CancelSubscriptionItem(context.Background(), "sub_item_abc123", &billing.CancelSubscriptionItemParams{
+    EndNow: clerk.Bool(false), // cancel at period end
+})
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("Canceled at:", item.CanceledAt)
+```
+
+---
+
+### `ExtendFreeTrial`
+
+Extends the free trial period of a subscription item.
+
+```go
+func ExtendFreeTrial(ctx context.Context, subscriptionItemID string, params *ExtendFreeTrialParams) (*clerk.SubscriptionItem, error)
+func (c *Client) ExtendFreeTrial(ctx context.Context, subscriptionItemID string, params *ExtendFreeTrialParams) (*clerk.SubscriptionItem, error)
+```
+
+#### ExtendFreeTrialParams
+
+<ParamField path="ExtendTo" type="string" required>
+  The date to extend the trial to, in ISO 8601 format (e.g. `"2025-12-31"`).
+</ParamField>
+
+```go
+item, err := billing.ExtendFreeTrial(context.Background(), "sub_item_abc123", &billing.ExtendFreeTrialParams{
+    ExtendTo: "2025-12-31",
+})
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("Trial period end:", item.PeriodEnd)
+```
+
+---
+
+## Types
+
+### `clerk.Plan`
+
+<ResponseField name="object" type="string">
+  Always `"plan"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Unique identifier.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Display name of the plan.
+</ResponseField>
+
+<ResponseField name="fee" type="*BillingMoney">
+  Monthly fee for the plan.
+</ResponseField>
+
+<ResponseField name="annual_monthly_fee" type="*BillingMoney">
+  Monthly fee when billed annually.
+</ResponseField>
+
+<ResponseField name="annual_fee" type="*BillingMoney">
+  Total annual fee.
+</ResponseField>
+
+<ResponseField name="description" type="*string">
+  Optional plan description.
+</ResponseField>
+
+<ResponseField name="product_id" type="string">
+  ID of the billing product this plan belongs to.
+</ResponseField>
+
+<ResponseField name="is_default" type="bool">
+  Whether this is the default plan.
+</ResponseField>
+
+<ResponseField name="is_recurring" type="bool">
+  Whether the plan has recurring billing.
+</ResponseField>
+
+<ResponseField name="publicly_visible" type="bool">
+  Whether the plan is shown on public pricing pages.
+</ResponseField>
+
+<ResponseField name="for_payer_type" type="string">
+  The payer type this plan applies to (`"user"` or `"organization"`).
+</ResponseField>
+
+<ResponseField name="slug" type="string">
+  URL-friendly identifier for the plan.
+</ResponseField>
+
+<ResponseField name="features" type="[]Feature">
+  List of features included in this plan.
+</ResponseField>
+
+<ResponseField name="free_trial_enabled" type="bool">
+  Whether new subscribers receive a free trial.
+</ResponseField>
+
+<ResponseField name="free_trial_days" type="*int">
+  Number of free trial days, if enabled.
+</ResponseField>
+
+### `clerk.SubscriptionItem`
+
+<ResponseField name="object" type="string">
+  Always `"subscription_item"`.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  Unique identifier.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current subscription status (e.g. `"active"`, `"canceled"`, `"past_due"`).
+</ResponseField>
+
+<ResponseField name="plan" type="*Plan">
+  The plan associated with this subscription item.
+</ResponseField>
+
+<ResponseField name="plan_period" type="string">
+  Billing period (`"monthly"` or `"annual"`).
+</ResponseField>
+
+<ResponseField name="payer" type="*Payer">
+  The user or organization paying for this subscription.
+</ResponseField>
+
+<ResponseField name="is_free_trial" type="bool">
+  Whether the subscription is currently in a free trial.
+</ResponseField>
+
+<ResponseField name="period_start" type="int64">
+  Unix timestamp (milliseconds) when the current billing period started.
+</ResponseField>
+
+<ResponseField name="period_end" type="*int64">
+  Unix timestamp (milliseconds) when the current billing period ends.
+</ResponseField>
+
+<ResponseField name="canceled_at" type="*int64">
+  Unix timestamp (milliseconds) when the subscription was canceled, if applicable.
+</ResponseField>
+
+<ResponseField name="created_at" type="int64">
+  Unix timestamp (milliseconds) when the subscription was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="int64">
+  Unix timestamp (milliseconds) when the subscription was last updated.
+</ResponseField>
